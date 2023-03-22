@@ -5,6 +5,8 @@ def map_realign(batch, realigner, sample):
     # else:
     return map_realign_pairs(batch, realigner, sample)
 
+    # return batch
+
 def map_realign_pairs(batch, datahub, sample):
     ref_genome_sources = [datahub.local_ref_genome_source]
     alt_genome_sources = [datahub.local_alt_genome_source]
@@ -17,7 +19,8 @@ def map_realign_pairs(batch, datahub, sample):
 
     import tqdm
     # for read_or_pair in batch:
-    for read_or_pair in tqdm.tqdm(batch):
+    # for read_or_pair in tqdm.tqdm(batch):
+    for read_or_pair in batch:
         # print(read_or_pair)
         #if read_or_pair.name == "D00360:64:HBAP3ADXX:1:2114:9685:53802":
         read_or_pair.realign(ref_genome_sources, alt_genome_sources)

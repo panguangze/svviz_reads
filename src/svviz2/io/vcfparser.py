@@ -25,7 +25,7 @@ def fix_vcf_header(vcf):
 class VCFParser(object):
     def __init__(self, datahub):
         self.datahub = datahub
-        self.vcf = pysam.VariantFile(datahub.args.variants, drop_samples=True)
+        self.vcf = pysam.VariantFile(datahub.args.variants)
         fix_vcf_header(self.vcf)
 
     def get_variants(self):
@@ -33,7 +33,11 @@ class VCFParser(object):
         for variant in self.vcf:
             if not variant.id:
                 raise VCFParserError("Variant ID must be specified in the VCF")
-                
+            gt = variant.samples.values()[0]["GT"]
+            # gt = variant.samples.values()["GT"]
+            print(gt)
+            if (gt[0] == 0 and gt[1] == 0) or gt[0] == None or gt[1] == None:
+                continue
             if not "SVTYPE" in variant.info:
                 if only_nucs(variant.ref) and only_nucs(variant.alts[0]):# and sv_type == "INS":
                     yield get_sequence_defined(variant, self.datahub)
@@ -42,7 +46,7 @@ class VCFParser(object):
                     print("variant does not appear to be a structural variant, skipping:{}".format(variant))
                     continue
 
-            sv_type = variant.info["SVTYPE"].upper()
+            sv_type = variant.info["SVTYPE"][0].upper()
             if sv_type == "BND":
                 mateid = variant.info["MATEID"]
                 if not isinstance(mateid, str):

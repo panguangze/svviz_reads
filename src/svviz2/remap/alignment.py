@@ -100,7 +100,10 @@ class Alignment(object):
         alns = []
         for genome_source in genome_sources:
             # this calculates the alignment score
+            # print(self,"ssss")
             cur_alns = genome_source.align(self)
+            # cur_alns = [self]
+            # print(cur_alns)
             for aln in cur_alns:
                 aln.concordant = lambda x: True
                 aln.loci = [aln.locus]
@@ -112,7 +115,6 @@ class Alignment(object):
     def realign(self, ref_genome_sources, alt_genome_sources):
         self.ref_pairs = self.realign_against_allele(ref_genome_sources)
         self.alt_pairs = self.realign_against_allele(alt_genome_sources)
-
         set_mapqs(self.ref_pairs+self.alt_pairs)
         self.ref_pairs.sort(key=lambda x: x.score, reverse=True)
         self.alt_pairs.sort(key=lambda x: x.score, reverse=True)

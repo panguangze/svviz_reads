@@ -67,7 +67,10 @@ def get_read_pairs(sample, datahub):
     """
     logger.info("Loading more read pairs...")
     cur_read_pairs = []
-    search_regions = datahub.variant.search_regions(sample.search_distance)
+    search_distance = sample.search_distance
+    if datahub.args.fast:
+        search_distance = 20
+    search_regions = datahub.variant.search_regions(search_distance)
     paired_read_iter = pairedreaditer.PairedReadIter(sample.bam, search_regions)
     if datahub.args.min_mapq:
         paired_read_iter.pair_min_mapq = datahub.args.min_mapq

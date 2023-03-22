@@ -55,6 +55,20 @@ class Sample(object):
         self.read_filter = None
         
         self._load(extra_args)
+        if not self.datahub.args.prepar:
+            self.support_file = open(self.datahub.args.support_file,"w")
+
+        if self.datahub.args.prepar:
+            self.prepar_bam = None
+
+            # def _get_bam_headers(variant, allele):
+            #     seqs = variant.seqs(allele)
+            #     header = {"HD": {"VN": 1.3, "SO": "unsorted"}}
+            #     sq = []
+            #     for name in seqs:
+            #         sq.append({"SN": name.replace("/", "__"), "LN": len(seqs[name])})
+            #     header["SQ"] = sq
+            #     return header
 
     def _load(self, extra_args):
         if not os.path.exists(self.bam_path):
@@ -168,31 +182,78 @@ class Sample(object):
                 sys.exit(0)
         return self._bam
 
+
+    def parse_bam(self, aln_sets):
+        if self.prepar_bam == None:
+            self.prepar_bam = pysam.AlignmentFile(
+                os.path.join(self.datahub.args.outdir, ".".join([self.name, "prepar", "bam"])),
+                "wb",
+                header=self.bam.header)
+        # print(aln_sets)
+        # outbam = pysam.AlignmentFile(os.path.join(self.datahub.args.outdir,".".join([self.name,"prepar", "bam"])), "wb",
+        #                     header=_get_bam_headers(self.datahub.variant, "amb"))
+        # outbam = pysam.AlignmentFile(os.path.join(self.datahub.args.outdir,".".join([self.name, "bam"])))
+        for aln_set in aln_sets:
+            if self.single_ended:
+                self.prepar_bam.write(aln_set._read)
+            else:
+                self.prepar_bam.write(aln_set._read)
+                self.prepar_bam.write(aln_set._read)
+
     def add_realignments(self, aln_sets):
         for allele in ["alt", "ref", "amb"]:
             self.outbam(allele, "w")
-
+        # print(aln_sets)
         for aln_set in aln_sets:
+            # pass
+            # print(aln_set)
             # if aln_set.supports_allele != "amb":
+            #TODO, nidongde
             if aln_set.supporting_aln is None: continue
+            # print(aln_set,"ooo")
             aln_set.supporting_aln.fix_flags()
-
+            #
             outbam = self.outbam(aln_set.supports_allele, "w")
+            #
+            # print(outbam,"oooo")
             if self.single_ended:
                 if aln_set.supports_allele=="amb":
-                    if aln_set.supporting_aln.chrom not in self.datahub.variant.seqs("amb"):
-                        continue
-
+                    continue
+                    # if aln_set.supporting_aln.chrom not in self.datahub.variant.seqs("amb"):
+                    #     continue
+                if aln_set.supports_allele == "ref":
+                    self.support_file.write(
+                        self.datahub.variant.short_name().split(".")[0] + " ref " + aln_set.supporting_aln._read.query_name+"\n")
+                    # print(self.datahub.variant.short_name(), "ref", aln_set.supporting_aln._read.query_name)
+                if aln_set.supports_allele == "alt":
+                    self.support_file.write(
+                        self.datahub.variant.short_name().split(".")[0] + " alt " + aln_set.supporting_aln._read.query_name+"\n")
                 outbam.write(aln_set.supporting_aln._read)
+                # outbam.write(aln_set._read)
             else:
                 if aln_set.supports_allele=="amb":
-                    if aln_set.supporting_aln.aln1.chrom not in self.datahub.variant.seqs("amb"):
-                        continue
-                    if aln_set.supporting_aln.aln2.chrom not in self.datahub.variant.seqs("amb"):
-                        continue
+                    continue
+                    # if aln_set.supporting_aln.aln1.chrom not in self.datahub.variant.seqs("amb"):
+                    #     continue
+                    # if aln_set.supporting_aln.aln2.chrom not in self.datahub.variant.seqs("amb"):
+                    #     continue
+                if aln_set.supports_allele == "ref":
+                    self.support_file.write(
+                        self.datahub.variant.short_name().split(".")[0] + " ref " + aln_set.supporting_aln.aln1._read.query_name+"\n")
+                    self.support_file.write(
+                        self.datahub.variant.short_name().split(".")[0] + " ref " + aln_set.supporting_aln.aln2._read.query_name+"\n")
 
+                    # print(self.datahub.variant.short_name(), "ref", aln_set.supporting_aln._read.query_name)
+                if aln_set.supports_allele == "alt":
+                    self.support_file.write(
+                        self.datahub.variant.short_name().split(".")[0] + " alt " + aln_set.supporting_aln.aln1._read.query_name+"\n")
+                    self.support_file.write(
+                        self.datahub.variant.short_name().split(".")[0] + " alt " + aln_set.supporting_aln.aln2._read.query_name+"\n")
                 outbam.write(aln_set.supporting_aln.aln1._read)
                 outbam.write(aln_set.supporting_aln.aln2._read)
+
+                # outbam.write(aln_set._read)
+                # outbam.write(aln_set._read)
 
 
     def finish_writing_realignments(self):

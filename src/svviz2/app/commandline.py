@@ -32,7 +32,15 @@ def parse_args(input_args):
 
     optional_args = parser.add_argument_group("Optional arguments")
 
+    optional_args.add_argument("--prepar", action="store_true", help=
+        "if prepar")
+    optional_args.add_argument("--sub_fa", type=str, help=
+        "ref and alt fa")
+
     optional_args.add_argument("--outdir", "-o", type=str, help=
+        "output directory for visualizations, summaries, etc (default: current \n"
+        "working directory)")
+    optional_args.add_argument("--support_file", type=str, help=
         "output directory for visualizations, summaries, etc (default: current \n"
         "working directory)")
 

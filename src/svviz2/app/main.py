@@ -53,8 +53,24 @@ def run(datahub):
         
     datahub.cleanup()
 
+def prepar(datahub):
+    """ this runs the app on the provided datahub """
+    for variant in datahub.get_variants():
+        # if not datahub.args.render_only:
+        k = variant
+        if datahub.should_genotype:
+            t0 = time.time()
+            # datahub.local_alt_genome_source()
+            datahub.prepar_input()
+            t1 = time.time()
+            print("TIME:::", t1 - t0)
+    datahub.cleanup()
+
 def main():
     """ entry point from command line """
     logging.basicConfig(level=logging.DEBUG)
     datahub = get_datahub()
-    run(datahub)
+    if datahub.args.prepar:
+        prepar(datahub)
+    else:
+        run(datahub)

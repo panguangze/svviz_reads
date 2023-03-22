@@ -4,7 +4,7 @@ import pysam
 from svviz2.utility.misc import reverse_comp
 
 try:
-    from ssw import ssw_wrap
+    from svviz2.remap import ssw_wrap
 except ImportError:
     print("ssw library not found")
 

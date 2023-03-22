@@ -14,7 +14,7 @@ from svviz2.remap.alignment import Alignment
 logger = logging.getLogger(__name__)
 
 try:
-    from svviz2.remap import _mapq
+    from ..remap import _mapq
 except:
     logger.error(traceback.format_exc())
     logger.error("ERROR: Failed to import mapq module; this is almost certainly due to "
@@ -94,8 +94,10 @@ class GenomeSource:
     def align(self, read):
         alns = []
         qualities = read.original_qualities()
-
+        # TODO
         raw_alns = self.aligner.align(read.original_sequence())
+        # raw_alns = [read._read]
+        # raw_alns = read
 
         for aln in raw_alns:
             aln = Alignment(aln)

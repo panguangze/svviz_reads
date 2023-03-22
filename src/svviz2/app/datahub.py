@@ -33,7 +33,9 @@ def get_internal_segments(sv, extend=20):
     internal_segments = []
 
     for part in chrom_parts:
+        print(part,"dddddd")
         for i, segment in enumerate(part.segments):
+            print(segment, "sssss")
             if i == len(part.segments)-1:
                 internal_segment = intervals.Locus(segment.chrom, segment.start-extend, segment.start+extend, "+")
                 internal_segments.append(internal_segment)
@@ -99,7 +101,27 @@ class DataHub(object):
         self.should_generate_dotplots = True
 
         self.temp_dir = None
+        self.prepar_fa = None
 
+    def prepar_input(self):
+        for sample_name, sample in self.samples.items():
+            logger.info("Analyzing sample {}".format(sample_name))
+            for batch in getreads.get_read_batch(sample, self):
+                if sample.single_ended:
+                    logger.info("parser {} reads".format(len(batch)))
+                else:
+                    logger.info("parser {} read pairs".format(len(batch)))
+                # print(batch)
+                # break
+                sample.parse_bam(batch)
+                # try:
+                #     sample.bam_sort_index(os.path.join(sample.datahub.args.outdir, ".".join([sample.name, "prepar", "bam"])))
+                # except:
+                #     print("ERROR!" * 30)
+                #     raise
+
+
+            # sample.finish_writing_realignments()
     def genotype_cur_variant(self):
         for sample_name, sample in self.samples.items():
             logger.info("Analyzing sample {}".format(sample_name))
@@ -114,8 +136,10 @@ class DataHub(object):
 
                     if self.args.fast:
                         print("BEFORE::", len(batch))
-                        batch = filter_pair_batch(batch, self.variant)
-                        print("AFTER:: ", len(batch))
+                        # batch = filter_pair_batch(batch, self.variant)
+                        # print("AFTER:: ", len(batch))
+                # print(batch)
+                # break
                         
                 aln_sets = maprealign.map_realign(batch, self, sample)
 
@@ -142,10 +166,11 @@ class DataHub(object):
         return state
 
     def cleanup(self):
+        pass
         #temp_dir = os.path.join(self.args.outdir, "svviz2-temp")
         #if os.path.exists(temp_dir):
         #    shutil.rmtree(temp_dir)
-        self.temp_dir.cleanup()
+        # self.temp_dir.cleanup()
 
     def get_variants(self):
         vcf = vcfparser.VCFParser(self)
@@ -204,11 +229,13 @@ class DataHub(object):
             #     self.args.outdir, "{}.{}.ref.bam".format(variant.short_name(), sample_name))
 
         if self.args.savereads:
+            if self.prepar_fa == None:
+                self.prepar_fa = open(os.path.join(self.args.outdir, "ref.alt.prepar.fa"), "w")
             for allele in ["alt", "ref"]:
-                outpath = os.path.join(self.args.outdir, "{}.genome.{}.fa".format(variant.short_name(), allele))
-                with open(outpath, "w") as genome_file:
-                    for name, seq in self.variant.seqs(allele).items():
-                        genome_file.write(">{}\n{}\n".format(name.replace("/", "__"), seq))
+                # outpath = os.path.join(self.args.outdir, "{}.genome.{}.fa".format(variant.short_name(), allele))
+                # with open(self.prepar_fa, "w") as genome_file:
+                for name, seq in self.variant.seqs(allele).items():
+                    self.prepar_fa.write(">{}-{}\n{}\n".format(variant.name, allele, seq))
 
         self.should_genotype = False
         logger.info("Looking for existing realignments; will try to open a few bam files that may not yet exist...")
