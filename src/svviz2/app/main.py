@@ -42,14 +42,14 @@ def run(datahub):
             t1 = time.time()
             print("TIME:::", t1-t0)
             
-        if datahub.should_render:
-            visualize.visualize(datahub)
+            if datahub.should_render:
+                visualize.visualize(datahub)
 
-        if datahub.should_generate_reports:
-            report.report(datahub)
+            if datahub.should_generate_reports:
+                report.report(datahub)
 
-        if datahub.should_generate_dotplots:
-            dotplots.generate_dotplots(datahub)
+            if datahub.should_generate_dotplots:
+                dotplots.generate_dotplots(datahub)
         
     datahub.cleanup()
 

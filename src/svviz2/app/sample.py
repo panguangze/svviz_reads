@@ -251,6 +251,7 @@ class Sample(object):
                         self.datahub.variant.short_name().split(".")[0] + " alt " + aln_set.supporting_aln.aln2._read.query_name+"\n")
                 outbam.write(aln_set.supporting_aln.aln1._read)
                 outbam.write(aln_set.supporting_aln.aln2._read)
+                self.support_file.flush()
 
                 # outbam.write(aln_set._read)
                 # outbam.write(aln_set._read)
@@ -273,7 +274,14 @@ class Sample(object):
             except OSError:
                 return False
         return True
-        
+
+    def has_resolved(self):
+        file_name = "{}{}".format(self.datahub.variant.short_name(), "")
+        outpath_svg = os.path.join(self.datahub.args.outdir, file_name + ".svg")
+        outpath_pdf = os.path.join(self.datahub.args.outdir, file_name + ".pdf")
+        if os.path.exists(outpath_svg) or os.path.exists(outpath_pdf):
+            return True
+        return False
     def outbam(self, allele, mode):
         if mode == "w":
             if not allele in self.outbams:

@@ -8,7 +8,7 @@ import traceback
 
 from svviz2.utility import intervals, misc
 # from svviz2.remap import mapq
-from svviz2.remap import ssw_aligner
+#from svviz2.remap import ssw_aligner
 from svviz2.remap.alignment import Alignment
 
 logger = logging.getLogger(__name__)

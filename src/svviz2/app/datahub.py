@@ -200,6 +200,13 @@ class DataHub(object):
 
     def set_cur_variant(self, variant):
         self.variant = variant
+        for sample in self.samples.values():
+            if sample.has_resolved():
+                self.should_genotype = False
+                logger.info(
+                    "Found realignments".format(self.variant))
+                return
+
 
         local_coords_in_full_genome = self.variant.search_regions(self.align_distance)
         self.genome.blacklist = local_coords_in_full_genome
@@ -240,7 +247,7 @@ class DataHub(object):
         self.should_genotype = False
         logger.info("Looking for existing realignments; will try to open a few bam files that may not yet exist...")
         for sample in self.samples.values():
-            if not sample.has_realignments():
+            if not sample.has_resolved():
                 self.should_genotype = True
         if not self.should_genotype:
             logger.info("Found realignments for all samples for event {}; skipping realignment".format(self.variant))
