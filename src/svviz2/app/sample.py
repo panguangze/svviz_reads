@@ -56,7 +56,7 @@ class Sample(object):
         
         self._load(extra_args)
         if not self.datahub.args.prepar:
-            self.support_file = open(self.datahub.args.support_file,"w")
+            self.support_file = open(self.datahub.args.support_file,"a")
 
         if self.datahub.args.prepar:
             self.prepar_bam = None
