@@ -9,7 +9,9 @@ import traceback
 from svviz2.utility import intervals, misc
 # from svviz2.remap import mapq
 #from svviz2.remap import ssw_aligner
+from svviz2.remap import minimapaligner
 from svviz2.remap.alignment import Alignment
+import svviz2.debug as debug
 
 logger = logging.getLogger(__name__)
 
@@ -65,10 +67,12 @@ class GenomeSource:
         self.names_to_contigs = collections.OrderedDict(names_to_contigs)
         self._bwa = None
         self._ssw = None
+        self._minimap = None
         self._blacklist = None
 
         self.aligner_type = aligner_type
-        self.max_base_quality = 40.0
+        # self.max_base_quality = 40.0
+        self.max_base_quality = 93
 
     def get_seq(self, chrom, start, end, strand):
         seq = self.names_to_contigs[chrom][start:end+1]
@@ -91,45 +95,65 @@ class GenomeSource:
             cur_chrom = misc.match_chrom_format(locus.chrom, list(self.keys()))
             self._blacklist.append(intervals.Locus(cur_chrom, locus.start, locus.end, locus.strand))
 
-    def align(self, read):
+    def align(self, read, diff_len):
         alns = []
-        qualities = read.original_qualities()
+        # qualities = read.original_qualities()
+        qualities = read.query_qualities
         # TODO
+        # print(read.query_name, "read.query_name")
         raw_alns = self.aligner.align(read.original_sequence())
         # raw_alns = [read._read]
         # raw_alns = read
 
         for aln in raw_alns:
-            aln = Alignment(aln)
-            if aln.is_reverse and qualities is not None:
-                aln._read.query_qualities = qualities[::-1]
+            if self.aligner_type == "minimap":
+                aln = Alignment(aln[0], aln[1], aln[2], aln[3], aln[4])
             else:
-                aln._read.query_qualities = qualities
+                aln = Alignment(aln)
+            if aln.is_reverse and qualities is not None:
+                # print(aln._read.query_qualities, "qualities1x")
+                # print(len(qualities), "qualities2x")
+                # print(read.query_name, aln.q_st, aln.q_en, "q_st, q_en")
+                aln._read.query_qualities = qualities[int(aln.q_st):int(aln.q_en)][::-1]
+            else:
+                # print(aln._read.query_qualities, "qualities1")
+                # print(len(qualities), "qualities2")
+                aln._read.query_qualities = qualities[int(aln.q_st):int(aln.q_en)]
 
             aln.chrom = self.keys()[aln.reference_id]
             aln._read.query_name = read.query_name
+            aln.original_seq_len = len(read.original_sequence())
 
             # if self.blacklist is not None:
                 # print("....", aln.locus, self.blacklist, misc.overlaps(aln.locus, self.blacklist))
             if self.blacklist is None or not intervals.overlaps(aln.locus, self.blacklist):
                 aln.source = self
                 aln.chrom = self.keys()[aln.reference_id]
-                self.score_alignment(aln)
-
+                self.score_alignment(aln, diff_len)
                 aln.set_tag("mq", read.mapq)
                 alns.append(aln)
     
         return alns
 
-    def score_alignment(self, aln):
+    def score_alignment(self, aln, diff_len):
         # TODO: move the mapqcalculator code to here
 
         # mc = mapq.MAPQCalculator(self)
         # aln.score = mc.get_alignment_end_score(aln)
 
         ref_seq = self.get_seq(aln.chrom, aln.reference_start, aln.reference_end, "+").upper()
-        aln.score = _mapq.get_alignment_end_score(
-            aln._read, ref_seq, max_quality=self.max_base_quality)
+        aln.score = _mapq.get_alignment_end_score(aln._read, ref_seq, max_quality=self.max_base_quality)
+        matched_count,read_count = _mapq.diff_region_similarity(aln._read, aln.q_st, aln.q_en, ref_seq, diff_len, max_quality=self.max_base_quality)
+        # matched_count,read_count = result_str.split("-")
+        aln.matched_count = int(matched_count)
+        aln.read_count_in_region = int(read_count)
+
+        # print(aln._read.query_sequence, "query_sequence")
+        # print(ref_seq, "ref_sequence")
+        # print(aln.cigarstring, aln._read.get_tag("NM"), "cigar")
+        # print(aln.q_st, aln.q_en, "q_st, q_en")
+        # print(aln._read.reference_start, aln._read.reference_end, "t_st, t_en")
+        # print(aln.cigarstring, aln._read.get_tag("NM"), "cigar", aln.score,aln._read.query_name, "aln.score")
         # aln.score = s2
 
         # assert numpy.isclose(aln.score, s2, rtol=1e-5), "{} :: {}".format(aln.score, s2)
@@ -140,6 +164,8 @@ class GenomeSource:
             return self.bwa
         elif self.aligner_type == "ssw":
             return self.ssw
+        elif self.aligner_type == "minimap":
+            return self.minimap
 
     @property
     def ssw(self):
@@ -147,6 +173,11 @@ class GenomeSource:
             self._ssw = ssw_aligner.Aligner(self.names_to_contigs)
         return self._ssw
 
+    @property
+    def minimap(self):
+        if self._minimap is None:
+            self._minimap = minimapaligner.Aligner(self.names_to_contigs)
+        return self._minimap
     @property
     def bwa(self):
         """

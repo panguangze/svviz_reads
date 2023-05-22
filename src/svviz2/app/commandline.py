@@ -52,6 +52,10 @@ def parse_args(input_args):
         "output the read realignments against the appropriate alt or ref allele \n"
         "(default: false)")
 
+
+    optional_args.add_argument("--instag", help=
+        "For insertion events, specify which info tag that the inserted sequence store, if not provided, we will only align reference part\n")
+
     optional_args.add_argument("--min-mapq", type=int, help=
         "only reads with mapq>=MIN_MAPQ will be analyzed; when analyzing \n"
         "paired-end data, at least one read end must be near the breakpoints \n"
@@ -90,7 +94,11 @@ def parse_args(input_args):
         "Skip all variants after this variant; counting starts with first \n"
         "variant in input VCF as 0 (default: end of vcf)")
 
+    optional_args.add_argument("--percent", type=float, default=0.95, help=
+        "The percent of matched base in diff region")
+
     optional_args.add_argument("--render-only", action="store_true", help="")
+    optional_args.add_argument("--debug", action="store_true", help="")
     optional_args.add_argument("--no-render", action="store_true", help="")
     optional_args.add_argument("--dotplots-only", action="store_true", help="")
     optional_args.add_argument("--no-dotplots", action="store_true", help="")

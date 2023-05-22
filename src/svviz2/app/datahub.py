@@ -2,7 +2,7 @@ import collections
 import logging
 import os
 import pysam
-#import shutil
+# import shutil
 import tempfile
 
 from svviz2.app import genomesource
@@ -16,13 +16,17 @@ from svviz2.remap import maprealign
 from svviz2.remap import genotyping
 from svviz2.utility import misc
 from svviz2.utility import intervals
-
+import svviz2.debug as debug
 
 logger = logging.getLogger(__name__)
 
 
 def name_from_bam_path(bampath):
-    return os.path.basename(bampath).replace(".bam", "").replace(".cram", "").replace(".sorted", "").replace(".sort", "").replace(".", "_").replace("+", "_")
+    return os.path.basename(bampath).replace(".bam", "").replace(".cram", "").replace(".sorted", "").replace(".sort",
+                                                                                                             "").replace(
+        ".", "_").replace("+", "_")
+
+
 # def name_from_bed_path(bampath):
 #     return os.path.basename(bampath).replace(".bed", "").replace(".sorted", "").replace(".sort", "").replace(".", "_").replace("+", "_").replace(".gz", "")
 
@@ -33,20 +37,20 @@ def get_internal_segments(sv, extend=20):
     internal_segments = []
 
     for part in chrom_parts:
-        print(part,"dddddd")
+        # print(part, "dddddd")
         for i, segment in enumerate(part.segments):
-            print(segment, "sssss")
-            if i == len(part.segments)-1:
-                internal_segment = intervals.Locus(segment.chrom, segment.start-extend, segment.start+extend, "+")
+            if i == len(part.segments) - 1:
+                internal_segment = intervals.Locus(segment.chrom, segment.start - extend, segment.start + extend, "+")
                 internal_segments.append(internal_segment)
             elif i == 0:
-                internal_segment = intervals.Locus(segment.chrom, segment.end-extend, segment.end+extend, "+")
+                internal_segment = intervals.Locus(segment.chrom, segment.end - extend, segment.end + extend, "+")
                 internal_segments.append(internal_segment)
             else:
-                internal_segment = intervals.Locus(segment.chrom, segment.start-extend, segment.end+extend, "+")
+                internal_segment = intervals.Locus(segment.chrom, segment.start - extend, segment.end + extend, "+")
                 internal_segments.append(internal_segment)
 
     return internal_segments
+
 
 def _get_pair_locus(aln1, aln2):
     assert aln1.reference_name == aln2.reference_name
@@ -57,6 +61,7 @@ def _get_pair_locus(aln1, aln2):
 
     return locus
 
+
 def _pair_passes(pair, segments):
     read1 = pair.original_read_ends["1"]
     read2 = pair.original_read_ends["2"]
@@ -65,22 +70,23 @@ def _pair_passes(pair, segments):
         return True
     for read in [read1, read2]:
         for pos in [0, -1]:
-            if read.cigartuples[pos][0] in [4,5] and read.cigartuples[pos][1] > 20:
+            if read.cigartuples[pos][0] in [4, 5] and read.cigartuples[pos][1] > 20:
                 return False
-    locus = _get_pair_locus(read1, read2)    
+    locus = _get_pair_locus(read1, read2)
     if intervals.overlaps(locus, segments):
         return True
     return False
 
-    
+
 def filter_pair_batch(batch, variant):
     passing = []
     segments = get_internal_segments(variant)
-    
+
     for pair in batch:
         if _pair_passes(pair, segments):
             passing.append(pair)
     return passing
+
 
 class DataHub(object):
     def __init__(self):
@@ -120,8 +126,8 @@ class DataHub(object):
                 #     print("ERROR!" * 30)
                 #     raise
 
-
             # sample.finish_writing_realignments()
+
     def genotype_cur_variant(self):
         for sample_name, sample in self.samples.items():
             logger.info("Analyzing sample {}".format(sample_name))
@@ -140,14 +146,25 @@ class DataHub(object):
                         # print("AFTER:: ", len(batch))
                 # print(batch)
                 # break
-                        
-                aln_sets = maprealign.map_realign(batch, self, sample)
+
+                diff_len = abs(len(self.variant.seqs("ref")) - len(self.variant.seqs("alt")))
+                if diff_len == 0:
+                    if len(self.variant.segments("ref")) == 3:
+                        diff_len = len(self.variant.segments("ref")[1])
+                    elif len(self.variant.segments("alt")) == 3:
+                        diff_len = len(self.variant.segments("alt")[1])
+                    else:
+                        diff_len = 500
+                print(self.variant.segments("ref"), "segments")
+                # print(self.variant.segments("alt"), "segments")
+                # print(diff_len, "diff_len")
+                aln_sets = maprealign.map_realign(batch, self, sample, diff_len)
 
                 cur_ref_count, cur_alt_count = genotyping.assign_reads_to_alleles(
                     aln_sets,
                     variants.get_breakpoints_on_local_reference(self.variant, "ref"),
                     variants.get_breakpoints_on_local_reference(self.variant, "alt"),
-                    sample.read_statistics)
+                    sample.read_statistics, diff_len, self.args.percent)
                 ref_count += cur_ref_count
                 alt_count += cur_alt_count
 
@@ -157,7 +174,6 @@ class DataHub(object):
 
             sample.finish_writing_realignments()
 
-            
     def __getstate__(self):
         """ allows pickling of DataHub()s """
         state = self.__dict__.copy()
@@ -167,8 +183,8 @@ class DataHub(object):
 
     def cleanup(self):
         pass
-        #temp_dir = os.path.join(self.args.outdir, "svviz2-temp")
-        #if os.path.exists(temp_dir):
+        # temp_dir = os.path.join(self.args.outdir, "svviz2-temp")
+        # if os.path.exists(temp_dir):
         #    shutil.rmtree(temp_dir)
         # self.temp_dir.cleanup()
 
@@ -176,8 +192,11 @@ class DataHub(object):
         vcf = vcfparser.VCFParser(self)
 
         good_variants = 0
-        
+
         for count, variant in enumerate(vcf.get_variants()):
+            print(count, "count")
+            if variant is None:
+                continue
             if self.args.first_variant is not None and count < self.args.first_variant:
                 continue
             if self.args.last_variant is not None and count > self.args.last_variant:
@@ -207,10 +226,9 @@ class DataHub(object):
                     "Found realignments".format(self.variant))
                 return
 
-
         local_coords_in_full_genome = self.variant.search_regions(self.align_distance)
         self.genome.blacklist = local_coords_in_full_genome
-        
+
         self.local_ref_genome_source = genomesource.GenomeSource(
             self.variant.seqs("ref"), aligner_type=self.aligner_type)
         self.local_alt_genome_source = genomesource.GenomeSource(
@@ -222,7 +240,7 @@ class DataHub(object):
         if self.args.savereads or self.args.render_only:
             outdir = self.args.outdir
         else:
-            #outdir = os.path.join(self.args.outdir, "svviz2-temp")
+            # outdir = os.path.join(self.args.outdir, "svviz2-temp")
             outdir = self.temp_dir.name
             misc.ensure_dir(outdir)
 
@@ -252,21 +270,21 @@ class DataHub(object):
         if not self.should_genotype:
             logger.info("Found realignments for all samples for event {}; skipping realignment".format(self.variant))
 
-
     def set_args(self, args):
+        debug.IS_DEBUG = args.debug
         EXTRA_ARG_TYPES = ["single_ended", "sequencer", "split_hap", "max_base_quality"]
         self.args = args
 
         self.aligner_type = args.aligner
-        assert self.aligner_type in ["bwa", "ssw"]
-        
+        assert self.aligner_type in ["bwa", "ssw", "minimap"]
+
         self.genome = genomesource.FastaGenomeSource(args.ref)
 
         if self.args.outdir is None:
             self.args.outdir = os.getcwd()
         misc.ensure_dir(self.args.outdir)
         self.temp_dir = tempfile.TemporaryDirectory(prefix="svviz2-temp", dir=self.args.outdir)
-        
+
         for bam_description in self.args.bam:
             fields = bam_description.split(",")
 
@@ -299,7 +317,7 @@ class DataHub(object):
             if "split_hap" in extra_args:
                 split_hap = misc.str_to_bool(extra_args["split_hap"])
             if split_hap:
-                for hap in [1,2,None]:
+                for hap in [1, 2, None]:
                     hap_name = "{}_hap{}".format(name, hap)
                     if hap is None:
                         hap_name = "{}_hap-unknown".format(name)
@@ -316,7 +334,7 @@ class DataHub(object):
             self.should_generate_dotplots = False
         if self.args.no_report:
             self.should_generate_reports = False
-            
+
         if self.args.render_only:
             self.should_generate_dotplots = False
             self.should_generate_reports = False
@@ -324,13 +342,13 @@ class DataHub(object):
         if self.args.dotplots_only:
             self.should_render = False
             self.should_generate_reports = False
-            
+
         if self.args.report_only:
             self.should_render = False
             self.should_generate_dotplots = False
 
         # if not (self.should_render and self.should_generate_dotplots and self.should_generate_reports):
-            # self.should_genotype = False
+        # self.should_genotype = False
         # if self.args.annotations:
         #     for annoPath in self.args.annotations:
         #         name = nameFromBedPath(annoPath)
@@ -341,7 +359,6 @@ class DataHub(object):
         #                 or annoPath.endswith(".gtf") or annoPath.endswith(".gtf.gz")):
         #                 logging.warn("Unknown annotation file extension; trying to parse as if GTF/GFF format: '{}'".format(annoPath))
         #             self.annotationSets[name] = gff.GeneAnnotationSet(annoPath)
-
 
     def __iter__(self):
         return iter(list(self.samples.values()))

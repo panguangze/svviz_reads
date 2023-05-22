@@ -23,13 +23,26 @@ class Alignment(object):
     """
     this is a pickle-able wrapper for reads from a bam file
     """
-    def __init__(self, read):
+    # def __init__(self, read):
+    #     self._read = read
+    #     self._storage = None
+    #     self.chrom = None
+    #
+    #     self.ref_pairs = []
+    #     self.alt_pairs = []
+    def __init__(self, read, q_st=0, q_en=0, ctg_len=0, reference_end=0):
         self._read = read
         self._storage = None
         self.chrom = None
-
+        self.q_st = q_st
+        self.q_en = q_en
+        self.matched_count = 0
+        self.read_count_in_region = 0
+        self.ctg_len = ctg_len
+        self.reference_end = reference_end
         self.ref_pairs = []
         self.alt_pairs = []
+        self.original_seq_len = 0
 
 
     def original_sequence(self):
@@ -38,6 +51,7 @@ class Alignment(object):
         return self.query_sequence
 
     def original_qualities(self):
+        print(self.is_reverse, "is_reverse")
         if self.query_qualities is None:
             return None
         if self.is_reverse:
@@ -95,13 +109,13 @@ class Alignment(object):
 
 
 
-    def realign_against_allele(self, genome_sources):
+    def realign_against_allele(self, genome_sources, diff_len):
         """ use this to realign against one allele """
         alns = []
         for genome_source in genome_sources:
             # this calculates the alignment score
             # print(self,"ssss")
-            cur_alns = genome_source.align(self)
+            cur_alns = genome_source.align(self, diff_len)
             # cur_alns = [self]
             # print(cur_alns)
             for aln in cur_alns:
@@ -111,13 +125,17 @@ class Alignment(object):
             alns.extend(cur_alns)
 
         return alns
-
-    def realign(self, ref_genome_sources, alt_genome_sources):
-        self.ref_pairs = self.realign_against_allele(ref_genome_sources)
-        self.alt_pairs = self.realign_against_allele(alt_genome_sources)
+    # sort aln to get the best alignment, consider the alignment quality and matched bases in diff region
+    def realign(self, ref_genome_sources, alt_genome_sources, diff_len):
+        # ref_len = len(list(ref_genome_sources[0].names_to_contigs.values())[0])
+        # alt_len = len(list(alt_genome_sources[0].names_to_contigs.values())[0])
+        # diff_len = abs(ref_len-alt_len)
+        self.ref_pairs = self.realign_against_allele(ref_genome_sources, diff_len)
+        self.alt_pairs = self.realign_against_allele(alt_genome_sources, diff_len)
         set_mapqs(self.ref_pairs+self.alt_pairs)
-        self.ref_pairs.sort(key=lambda x: x.score, reverse=True)
-        self.alt_pairs.sort(key=lambda x: x.score, reverse=True)
+        # TODO for single and pair reads, for single, consider the alignment quality and matched bases in diff region, for pair use the best score alignment
+        # self.ref_pairs.sort(key=lambda x: x.score, reverse=True)
+        # self.alt_pairs.sort(key=lambda x: x.score, reverse=True)
 
 
 
