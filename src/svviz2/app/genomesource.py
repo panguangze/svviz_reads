@@ -71,8 +71,8 @@ class GenomeSource:
         self._blacklist = None
 
         self.aligner_type = aligner_type
-        # self.max_base_quality = 40.0
-        self.max_base_quality = 93
+        self.max_base_quality = 40.0
+        # self.max_base_quality = 93
 
     def get_seq(self, chrom, start, end, strand):
         seq = self.names_to_contigs[chrom][start:end+1]
@@ -108,17 +108,21 @@ class GenomeSource:
         for aln in raw_alns:
             if self.aligner_type == "minimap":
                 aln = Alignment(aln[0], aln[1], aln[2], aln[3], aln[4])
+                if aln.is_reverse and qualities is not None:
+                    # print(aln._read.query_qualities, "qualities1x")
+                    # print(len(qualities), "qualities2x")
+                    # print(read.query_name, aln.q_st, aln.q_en, "q_st, q_en")
+                    aln._read.query_qualities = qualities[int(aln.q_st):int(aln.q_en)][::-1]
+                else:
+                    # print(aln._read.query_qualities, "qualities1")
+                    # print(len(qualities), "qualities2")
+                    aln._read.query_qualities = qualities[int(aln.q_st):int(aln.q_en)]
             else:
                 aln = Alignment(aln)
-            if aln.is_reverse and qualities is not None:
-                # print(aln._read.query_qualities, "qualities1x")
-                # print(len(qualities), "qualities2x")
-                # print(read.query_name, aln.q_st, aln.q_en, "q_st, q_en")
-                aln._read.query_qualities = qualities[int(aln.q_st):int(aln.q_en)][::-1]
-            else:
-                # print(aln._read.query_qualities, "qualities1")
-                # print(len(qualities), "qualities2")
-                aln._read.query_qualities = qualities[int(aln.q_st):int(aln.q_en)]
+                if aln.is_reverse and qualities is not None:
+                    aln._read.query_qualities = qualities[::-1]
+                else:
+                    aln._read.query_qualities = qualities
 
             aln.chrom = self.keys()[aln.reference_id]
             aln._read.query_name = read.query_name

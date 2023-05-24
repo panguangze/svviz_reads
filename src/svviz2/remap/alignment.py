@@ -51,7 +51,7 @@ class Alignment(object):
         return self.query_sequence
 
     def original_qualities(self):
-        print(self.is_reverse, "is_reverse")
+        # print(self.is_reverse, "is_reverse")
         if self.query_qualities is None:
             return None
         if self.is_reverse:
@@ -126,7 +126,7 @@ class Alignment(object):
 
         return alns
     # sort aln to get the best alignment, consider the alignment quality and matched bases in diff region
-    def realign(self, ref_genome_sources, alt_genome_sources, diff_len):
+    def realign(self, ref_genome_sources, alt_genome_sources, diff_len, aligner_type):
         # ref_len = len(list(ref_genome_sources[0].names_to_contigs.values())[0])
         # alt_len = len(list(alt_genome_sources[0].names_to_contigs.values())[0])
         # diff_len = abs(ref_len-alt_len)
@@ -134,8 +134,9 @@ class Alignment(object):
         self.alt_pairs = self.realign_against_allele(alt_genome_sources, diff_len)
         set_mapqs(self.ref_pairs+self.alt_pairs)
         # TODO for single and pair reads, for single, consider the alignment quality and matched bases in diff region, for pair use the best score alignment
-        # self.ref_pairs.sort(key=lambda x: x.score, reverse=True)
-        # self.alt_pairs.sort(key=lambda x: x.score, reverse=True)
+        if aligner_type == 'bwa':
+            self.ref_pairs.sort(key=lambda x: x.score, reverse=True)
+            self.alt_pairs.sort(key=lambda x: x.score, reverse=True)
 
 
 

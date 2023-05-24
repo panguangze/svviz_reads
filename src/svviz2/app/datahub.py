@@ -164,7 +164,7 @@ class DataHub(object):
                     aln_sets,
                     variants.get_breakpoints_on_local_reference(self.variant, "ref"),
                     variants.get_breakpoints_on_local_reference(self.variant, "alt"),
-                    sample.read_statistics, diff_len, self.args.percent)
+                    sample.read_statistics, diff_len, self.args)
                 ref_count += cur_ref_count
                 alt_count += cur_alt_count
 

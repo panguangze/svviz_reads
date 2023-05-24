@@ -11,15 +11,15 @@ import svviz2.debug as debug
 
 cdef:
     float match = 0.0
-    float mismatch= -1.0
+    float mismatch= 0.0
     float gap_open= -1.0
-    float gap_extend= -2.0
+    float gap_extend= -1.0
     float clipping_penalty= 0.0
     float min_clip_length= 10
     float discordant_penalty= -15
     float phred_scale= 10.0
-    float min_base_quality= 33
-    float max_base_quality= 93
+    float min_base_quality= 0
+    float max_base_quality= 10
 cdef:
     char *TAG_END_SCORE = "Es"
     float MIN_PHRED_QUALITY = 3.0
@@ -103,7 +103,7 @@ cpdef double get_alignment_end_score(
             read_has_nuc = True
         ref_has_nuc = False
         if ref_pos is not None:
-            ref_nuc = reference_sequence[ref_pos]
+            ref_nuc = reference_sequence[ref_pos-reference_start]
             ref_has_nuc = True
         # print(i, read_pos, read_nuc, ref_pos, ref_nuc, log10_score, read_has_nuc, ref_has_nuc)
 
@@ -129,9 +129,7 @@ cpdef double get_alignment_end_score(
                 in_gap = True
         elif read_nuc != ref_nuc:
             in_gap = False
-            # log10_score += read_quality / -phred_scale + mismatch
-            prob = 1 - phred_to_prob(read_quality, phred_scale)
-            log10_score += prob_to_phred(prob, -1) + mismatch
+            log10_score += read_quality / -phred_scale + mismatch
         else:
             in_gap = False
             prob = 1 - phred_to_prob(read_quality, phred_scale)

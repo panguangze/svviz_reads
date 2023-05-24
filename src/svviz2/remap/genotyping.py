@@ -162,7 +162,8 @@ def check_diff_region(aln, diff_len, percent, is_dup_ins=False):
     # else:
         return f1 and f2, min(percent1, percent2), max(percent1, percent2), percent
 
-def assign_reads_to_alleles(aln_sets, ref_breakpoint_collection, alt_breakpoint_collection, read_stats, diff_len, percent):
+
+def assign_reads_to_alleles(aln_sets, ref_breakpoint_collection, alt_breakpoint_collection, read_stats, diff_len, args):
     def get_best_score(_aln_set, _allele):
         if _allele == "ref":
             alignments = _aln_set.ref_pairs
@@ -171,90 +172,127 @@ def assign_reads_to_alleles(aln_sets, ref_breakpoint_collection, alt_breakpoint_
         if len(alignments) > 0:
             return alignments[0].mapq
         return 0
-
+    percent = args.percent
     ref_total = 0
     alt_total = 0
 
+    if args.aligner_type == "minimap2":
 
-    for aln_set in aln_sets:
-        ref_score = get_best_score(aln_set, "ref")
-        alt_score = get_best_score(aln_set, "alt")
+        for aln_set in aln_sets:
+            ref_score = get_best_score(aln_set, "ref")
+            alt_score = get_best_score(aln_set, "alt")
 
-        # if aln_set.name == "D00360:99:C8VWFANXX:4:2310:5190:27306":
-        aln_set.supports_allele = "amb"
-        aln_set.support_prob = 0
-        aln_set.supporting_aln = None
-        # print(aln_set._read)
-        # print(">REF<")
-        # print("ref_score", ref_score)
-        # print("alt_score", alt_score)
-        # for aln in aln_set.ref_pairs:
-            # print(" ", aln.aln1.locus, aln.aln1.cigarstring, aln.aln1.score)
-            # print(" ", aln.aln2.locus, aln.aln2.cigarstring, aln.aln2.score)
-            # print(" ", aln.mapq)
-        # print(">ALT<")
-        # for aln in aln_set.alt_pairs:
-            # print(" ", aln.aln1.locus, aln.aln1.cigarstring, aln.aln1.score)
-            # print(" ", aln.aln2.locus, aln.aln2.cigarstring, aln.aln2.score)
-            # print(" ", aln.mapq)
-        # diff_len = abs(aln_set.ref_pairs[0].ctg_len - aln_set.alt_pairs[0].ctg_len)
-        if debug.IS_DEBUG:
-            for item in aln_set.ref_pairs:
-                print(item.matched_count, item.read_count_in_region, item.score, item._read.query_name, item.reference_end, "item ref")
-            for item in aln_set.alt_pairs:
-                print(item.matched_count, item.read_count_in_region, item.score, item._read.query_name, item.reference_end, "item alt")
-        ref_best_aln = get_best_aln(aln_set.ref_pairs)
-        alt_best_aln = get_best_aln(aln_set.alt_pairs)
-        # TODO, any other situation?
-        is_dup_ins = False
-        if ref_best_aln is not None and alt_best_aln is not None:
-            is_dup_ins = alt_best_aln.ctg_len > ref_best_aln.ctg_len
-        is_ref, ref_percent, ref_percent2, current_percent = check_diff_region(ref_best_aln, diff_len, percent, is_dup_ins)
-        print("xxxxxxxxxxxxxxxxxxxxxx")
-        is_alt, alt_percent, alt_percent2, current_percent = check_diff_region(alt_best_aln, diff_len, percent, is_dup_ins)
-        # TODO if diff len large than 300, 0.95 and marge > 0.1, if diff len less than 300 and large than 150, 0.9 and marge 0.5, if diff len less than 150, 0.85 and marge 0.5
-        ref_alt_margin = 0.3
-        if math.isclose(percent - current_percent, 0.1, abs_tol=0.0001):
-            ref_alt_margin = 0.3
-        if is_dup_ins and diff_len < 200:
-            ref_alt_margin = ref_alt_margin - 0.03
-        large_than_margin = False
-        large_than_margin = max(abs(ref_percent2 - alt_percent), abs(alt_percent2 - ref_percent)) > ref_alt_margin
-        large_than_margin_and_05 = max(abs(ref_percent2 - alt_percent), abs(alt_percent2 - ref_percent)) > ref_alt_margin and math.isclose(ref_alt_margin,0.5, abs_tol=0.0001)
-        if debug.IS_DEBUG:
-            print(is_ref, is_alt,ref_percent, ref_percent2, alt_percent, alt_percent2, diff_len,ref_score,alt_score, alt_percent,abs(ref_percent - alt_percent), abs(ref_percent - alt_percent) < ref_alt_margin,aln_set.query_name,large_than_margin,ref_alt_margin,percent,current_percent, "is ref alt")
-        if (is_ref and is_alt) or (not is_ref and not is_alt):
-            aln = aln_set.ref_pairs[0]
+            # if aln_set.name == "D00360:99:C8VWFANXX:4:2310:5190:27306":
             aln_set.supports_allele = "amb"
-            aln_set.supporting_aln = aln
-            # print(aln_set.query_name, "amb")
-        elif (is_ref and large_than_margin) or (is_ref and large_than_margin_and_05 and ref_percent > alt_percent):
-            if alt_percent2 > 0.95 and alt_percent > 0.75:
+            aln_set.support_prob = 0
+            aln_set.supporting_aln = None
+            # print(aln_set._read)
+            # print(">REF<")
+            # print("ref_score", ref_score)
+            # print("alt_score", alt_score)
+            # for aln in aln_set.ref_pairs:
+                # print(" ", aln.aln1.locus, aln.aln1.cigarstring, aln.aln1.score)
+                # print(" ", aln.aln2.locus, aln.aln2.cigarstring, aln.aln2.score)
+                # print(" ", aln.mapq)
+            # print(">ALT<")
+            # for aln in aln_set.alt_pairs:
+                # print(" ", aln.aln1.locus, aln.aln1.cigarstring, aln.aln1.score)
+                # print(" ", aln.aln2.locus, aln.aln2.cigarstring, aln.aln2.score)
+                # print(" ", aln.mapq)
+            # diff_len = abs(aln_set.ref_pairs[0].ctg_len - aln_set.alt_pairs[0].ctg_len)
+            if debug.IS_DEBUG:
+                for item in aln_set.ref_pairs:
+                    print(item.matched_count, item.read_count_in_region, item.score, item._read.query_name, item.reference_end, "item ref")
+                for item in aln_set.alt_pairs:
+                    print(item.matched_count, item.read_count_in_region, item.score, item._read.query_name, item.reference_end, "item alt")
+            ref_best_aln = get_best_aln(aln_set.ref_pairs)
+            alt_best_aln = get_best_aln(aln_set.alt_pairs)
+            # TODO, any other situation?
+            is_dup_ins = False
+            if ref_best_aln is not None and alt_best_aln is not None:
+                is_dup_ins = alt_best_aln.ctg_len > ref_best_aln.ctg_len
+            is_ref, ref_percent, ref_percent2, current_percent = check_diff_region(ref_best_aln, diff_len, percent, is_dup_ins)
+            print("xxxxxxxxxxxxxxxxxxxxxx")
+            is_alt, alt_percent, alt_percent2, current_percent = check_diff_region(alt_best_aln, diff_len, percent, is_dup_ins)
+            # TODO if diff len large than 300, 0.95 and marge > 0.1, if diff len less than 300 and large than 150, 0.9 and marge 0.5, if diff len less than 150, 0.85 and marge 0.5
+            ref_alt_margin = 0.3
+            if math.isclose(percent - current_percent, 0.1, abs_tol=0.0001):
+                ref_alt_margin = 0.3
+            if is_dup_ins and diff_len < 200:
+                ref_alt_margin = ref_alt_margin - 0.03
+            large_than_margin = False
+            large_than_margin = max(abs(ref_percent2 - alt_percent), abs(alt_percent2 - ref_percent)) > ref_alt_margin
+            large_than_margin_and_05 = max(abs(ref_percent2 - alt_percent), abs(alt_percent2 - ref_percent)) > ref_alt_margin and math.isclose(ref_alt_margin,0.5, abs_tol=0.0001)
+            if debug.IS_DEBUG:
+                print(is_ref, is_alt,ref_percent, ref_percent2, alt_percent, alt_percent2, diff_len,ref_score,alt_score, alt_percent,abs(ref_percent - alt_percent), abs(ref_percent - alt_percent) < ref_alt_margin,aln_set.query_name,large_than_margin,ref_alt_margin,percent,current_percent, "is ref alt")
+            if (is_ref and is_alt) or (not is_ref and not is_alt):
                 aln = aln_set.ref_pairs[0]
                 aln_set.supports_allele = "amb"
                 aln_set.supporting_aln = aln
-            else:
+                # print(aln_set.query_name, "amb")
+            elif (is_ref and large_than_margin) or (is_ref and large_than_margin_and_05 and ref_percent > alt_percent):
+                if alt_percent2 > 0.95 and alt_percent > 0.75:
+                    aln = aln_set.ref_pairs[0]
+                    aln_set.supports_allele = "amb"
+                    aln_set.supporting_aln = aln
+                else:
+                    aln = aln_set.ref_pairs[0]
+                    # if is_ref:
+                    ref_total += set_read_supports_allele(
+                        aln_set, aln, "ref", ref_score, read_stats, ref_breakpoint_collection, min_overlap=4)
+                # print(aln_set.query_name, "ref")
+            elif (is_alt and large_than_margin) or (is_alt and large_than_margin_and_05 and ref_percent < alt_percent):
+            # elif (alt_score - ref_score > 1 and alt_score >= 30 and large_than_margin) or (large_than_margin_and_05 and ref_percent < alt_percent):
+                if ref_percent2 > 0.95 and ref_percent > 0.75:
+                    aln = aln_set.ref_pairs[0]
+                    aln_set.supports_allele = "amb"
+                    aln_set.supporting_aln = aln
+                else:
+                    aln = aln_set.alt_pairs[0]
+                    alt_total += set_read_supports_allele(
+                        aln_set, aln, "alt", alt_score, read_stats, alt_breakpoint_collection, min_overlap=4)
+                # print(aln_set.query_name, "alt")
+            elif len(aln_set.ref_pairs) > 0:
                 aln = aln_set.ref_pairs[0]
-                # if is_ref:
+                aln_set.supports_allele = "amb"
+                aln_set.supporting_aln = aln
+            # print(aln_set.query_name, "final amb")
+    else:
+        for aln_set in aln_sets:
+            ref_score = get_best_score(aln_set, "ref")
+            alt_score = get_best_score(aln_set, "alt")
+
+            # if aln_set.name == "D00360:99:C8VWFANXX:4:2310:5190:27306":
+            aln_set.supports_allele = "amb"
+            aln_set.support_prob = 0
+            aln_set.supporting_aln = None
+
+            if ref_score - alt_score > 1:
+                # print(aln_set.name)
+                # print(">REF<")
+                # for aln in aln_set.ref_pairs:
+                #     print(" ", aln.aln1.locus, aln.aln1.cigarstring, aln.aln1.score)
+                #     print(" ", aln.aln2.locus, aln.aln2.cigarstring, aln.aln2.score)
+                #     print(" ", aln.mapq)
+                # print(">ALT<")
+                # for aln in aln_set.alt_pairs:
+                #     print(" ", aln.aln1.locus, aln.aln1.cigarstring, aln.aln1.score)
+                #     print(" ", aln.aln2.locus, aln.aln2.cigarstring, aln.aln2.score)
+                #     print(" ", aln.mapq)
+
+                aln = aln_set.ref_pairs[0]
                 ref_total += set_read_supports_allele(
                     aln_set, aln, "ref", ref_score, read_stats, ref_breakpoint_collection, min_overlap=4)
-            # print(aln_set.query_name, "ref")
-        elif (is_alt and large_than_margin) or (is_alt and large_than_margin_and_05 and ref_percent < alt_percent):
-        # elif (alt_score - ref_score > 1 and alt_score >= 30 and large_than_margin) or (large_than_margin_and_05 and ref_percent < alt_percent):
-            if ref_percent2 > 0.95 and ref_percent > 0.75:
-                aln = aln_set.ref_pairs[0]
-                aln_set.supports_allele = "amb"
-                aln_set.supporting_aln = aln
-            else:
+
+
+            elif alt_score - ref_score > 1:
                 aln = aln_set.alt_pairs[0]
                 alt_total += set_read_supports_allele(
                     aln_set, aln, "alt", alt_score, read_stats, alt_breakpoint_collection, min_overlap=4)
-            # print(aln_set.query_name, "alt")
-        elif len(aln_set.ref_pairs) > 0:
-            aln = aln_set.ref_pairs[0]
-            aln_set.supports_allele = "amb"
-            aln_set.supporting_aln = aln
-            # print(aln_set.query_name, "final amb")
+            elif len(aln_set.ref_pairs) > 0:
+                aln = aln_set.ref_pairs[0]
+                aln_set.supports_allele = "amb"
+                aln_set.supporting_aln = aln
     return ref_total, alt_total
 
 
