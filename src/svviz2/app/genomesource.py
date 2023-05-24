@@ -106,7 +106,7 @@ class GenomeSource:
         # raw_alns = read
 
         for aln in raw_alns:
-            if self.aligner_type == "minimap":
+            if self.aligner_type == "minimap2":
                 aln = Alignment(aln[0], aln[1], aln[2], aln[3], aln[4])
                 if aln.is_reverse and qualities is not None:
                     # print(aln._read.query_qualities, "qualities1x")
@@ -168,7 +168,7 @@ class GenomeSource:
             return self.bwa
         elif self.aligner_type == "ssw":
             return self.ssw
-        elif self.aligner_type == "minimap":
+        elif self.aligner_type == "minimap2":
             return self.minimap
 
     @property

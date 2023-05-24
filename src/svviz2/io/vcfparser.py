@@ -120,7 +120,7 @@ class VCFParser(object):
             else:
                 if sv_type != "CNV":
                     yield get_insN(variant, self.datahub)
-                logger.warn("SKIPPING VARIANT: {}".format(variant))
+                    logger.warn("SKIPPING VARIANT: {}".format(variant))
 
         if len(breakends) > 0:
             logger.warn("found {} unpaired breakends".format(len(breakends)))

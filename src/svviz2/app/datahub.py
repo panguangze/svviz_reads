@@ -277,7 +277,7 @@ class DataHub(object):
         self.args = args
 
         self.aligner_type = args.aligner
-        assert self.aligner_type in ["bwa", "ssw", "minimap"]
+        assert self.aligner_type in ["bwa", "ssw", "minimap2"]
 
         self.genome = genomesource.FastaGenomeSource(args.ref)
 
