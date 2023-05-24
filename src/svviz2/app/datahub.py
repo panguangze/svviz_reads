@@ -194,7 +194,7 @@ class DataHub(object):
         good_variants = 0
 
         for count, variant in enumerate(vcf.get_variants()):
-            print(count, "count")
+            # print(count, "count")
             if variant is None:
                 continue
             if self.args.first_variant is not None and count < self.args.first_variant:
