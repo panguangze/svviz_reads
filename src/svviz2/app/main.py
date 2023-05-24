@@ -43,7 +43,10 @@ def run(datahub):
             print("TIME:::", t1-t0)
             
             if datahub.should_render:
-                visualize.visualize(datahub)
+                try:
+                    visualize.visualize(datahub)
+                except Exception as e:
+                    logger.error("Skipp visualizing: {}".format(e))
 
             if datahub.should_generate_reports:
                 report.report(datahub)
