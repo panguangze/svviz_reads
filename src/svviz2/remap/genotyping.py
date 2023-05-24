@@ -176,7 +176,7 @@ def assign_reads_to_alleles(aln_sets, ref_breakpoint_collection, alt_breakpoint_
     ref_total = 0
     alt_total = 0
 
-    if args.aligner_type == "minimap2":
+    if args.aligner == "minimap2":
 
         for aln_set in aln_sets:
             ref_score = get_best_score(aln_set, "ref")

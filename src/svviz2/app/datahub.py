@@ -155,7 +155,7 @@ class DataHub(object):
                         diff_len = len(self.variant.segments("alt")[1])
                     else:
                         diff_len = 500
-                print(self.variant.segments("ref"), "segments")
+                # print(self.variant.segments("ref"), "segments")
                 # print(self.variant.segments("alt"), "segments")
                 # print(diff_len, "diff_len")
                 aln_sets = maprealign.map_realign(batch, self, sample, diff_len)

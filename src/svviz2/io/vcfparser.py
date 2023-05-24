@@ -35,7 +35,23 @@ class VCFParser(object):
     def get_variants(self):
         breakends = {}
         for variant in self.vcf:
-            print(variant.stop,variant.start, "variant.stop")
+            if len(variant.ref) == 1 and len(variant.alts[0]) == 1:
+                yield None
+                continue
+            if "SVLEN" in variant.info:
+                svlen = variant.info["SVLEN"]
+                if type(svlen) is tuple:
+                    svlen = variant.info["SVLEN"][0]
+                if abs(svlen) <= 50:
+                    yield None
+                    continue
+            if "SVTYPE" in variant.info:
+                svtype = variant.info["SVTYPE"]
+                if type(svtype) is tuple:
+                    svtype = variant.info["SVTYPE"][0]
+                    if svtype.upper() in ["SNP", "SNP"]:
+                        yield None
+                        continue
             if variant.stop - 1 >= variant.start:
                 variant.stop = variant.stop
             elif "END" in variant.info:
@@ -61,8 +77,9 @@ class VCFParser(object):
                 else:
                     print("variant does not appear to be a structural variant, skipping:{}".format(variant))
                     continue
-
-            sv_type = variant.info["SVTYPE"][0].upper()
+            sv_type = variant.info["SVTYPE"]
+            if type(sv_type) is tuple:
+                sv_type = variant.info["SVTYPE"][0]
             if sv_type == "BND":
                 mateid = variant.info["MATEID"]
                 if not isinstance(mateid, str):
@@ -247,10 +264,10 @@ def parse_breakend(record1, record2, datahub):
             record1, record2))
         return None
 
-    if result1["chrom"] == result1["other_chrom"] and \
-            abs(result1["pos"] - result1["other_pos"]) < datahub.align_distance * 5:
-        logger.error("Can't yet handle nearby breakends; skipping")
-        return None
+    # if result1["chrom"] == result1["other_chrom"] and \
+    #         abs(result1["pos"] - result1["other_pos"]) < datahub.align_distance * 5:
+    #     logger.error("Can't yet handle nearby breakends; skipping")
+    #     return None
 
     # convert from 1-based to 0-based coordinates
     breakpoint1 = Locus(result1["chrom"],
