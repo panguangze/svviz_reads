@@ -104,6 +104,7 @@ def parse_args(input_args):
     optional_args.add_argument("--no-dotplots", action="store_true", help="")
     optional_args.add_argument("--report-only", action="store_true", help="")
     optional_args.add_argument("--no-report", action="store_true", help="")
+    optional_args.add_argument("--contigs", type=str, help="chromosomes to analyze")
 
     optional_args.add_argument("--only-plot-context", type=int, help=
         "Only show this many nucleotides before the first breakpoint, and the \n"

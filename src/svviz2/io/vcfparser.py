@@ -51,6 +51,9 @@ class VCFParser(object):
             if (gt[0] == 0 and gt[1] == 0) or gt[0] == None or gt[1] == None or (gt[0] == 1 and gt[1] == 1):
                 yield None
                 continue
+            if self.datahub.args.contigs is not None and variant.chrom not in self.datahub.args.contigs.split(","):
+                yield None
+                continue
             if not "SVTYPE" in variant.info:
                 if only_nucs(variant.ref) and only_nucs(variant.alts[0]):  # and sv_type == "INS":
                     yield get_sequence_defined(variant, self.datahub)

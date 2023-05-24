@@ -272,6 +272,7 @@ class DataHub(object):
 
     def set_args(self, args):
         debug.IS_DEBUG = args.debug
+        debug.ALIGN_DISTANCE = args.align_distance
         EXTRA_ARG_TYPES = ["single_ended", "sequencer", "split_hap", "max_base_quality"]
         self.args = args
 

@@ -7,6 +7,7 @@ ctypedef numpy.int_t DTYPE_INT_t
 ctypedef numpy.float_t DTYPE_FLOAT_t
 cimport cython
 from libc.stdint cimport uint32_t
+import svviz2.debug as debug
 
 cdef:
     float match = 0.0
@@ -204,12 +205,12 @@ cpdef tuple diff_region_similarity(
     tag = True
     for read_pos, ref_pos in aln.get_aligned_pairs():
         # print(read_pos, ref_pos, "read ref")
-        if ref_pos is not None and ref_pos < 5000:
+        if ref_pos is not None and ref_pos < debug.ALIGN_DISTANCE:
             tag = True
             continue
         if ref_pos is None and tag:
             continue
-        if ref_pos is not None and ref_pos > 5000+ diff_len:
+        if ref_pos is not None and ref_pos > debug.ALIGN_DISTANCE+ diff_len:
             break
         tag = False
         read_has_nuc = False
@@ -247,6 +248,6 @@ cpdef tuple diff_region_similarity(
         i += 1
     # print(i,"index")
 
-    print(match_count,unmatch_count,i3,i4, read_base_count, match_count/diff_len,aln.query_name, query_start, query_end, reference_start, "match_count read_base_count")
+    # print(match_count,unmatch_count,i3,i4, read_base_count, match_count/diff_len,aln.query_name, query_start, query_end, reference_start, "match_count read_base_count")
 
     return match_count, read_base_count
