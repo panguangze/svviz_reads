@@ -129,7 +129,7 @@ class VCFParser(object):
 def get_sequence_defined(variant, datahub):
     # print("::", variant.id, variant.start, variant.stop, len(variant.ref))
     # variant.start: 0-based, inclusive; variant.stop: 0-based, exclusive
-    print(variant.stop , variant.start, len(variant.ref), "eeeeeeee")
+    # print(variant.stop , variant.start, len(variant.ref), "eeeeeeee")
     if variant.stop - variant.start != len(variant.ref):
         error = "VCF format error: coordinates ({}:{}-{}) do not match the variant length ({}). Please check the VCF variant" \
                 "spec; in particular, END coordinates are inclusive. Full variant: {}"
