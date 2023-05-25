@@ -266,10 +266,10 @@ class Sample(object):
             self.outbams[allele].close()
             self.outbams.pop(allele)
             try:
-                bam_sort_index(self.outbam_paths[allele])
+                if self.datahub.args.aligner == "bwa":
+                    bam_sort_index(self.outbam_paths[allele])
             except:
-                print("ERROR!" * 30)
-                raise
+                print("Write bam error")
 
     def has_realignments(self):
         for allele in ["alt", "ref", "amb"]:
@@ -295,9 +295,10 @@ class Sample(object):
             return self.outbams[allele]
 
         assert not allele in self.outbams, "forgot to close outbam before re-opening"
-
-        # return pysam.AlignmentFile(self.outbam_paths[allele].replace(".bam", ".sorted.bam"))
-        return pysam.AlignmentFile(self.outbam_paths[allele])
+        if self.datahub.args.aligner == "bwa":
+            return pysam.AlignmentFile(self.outbam_paths[allele].replace(".bam", ".sorted.bam"))
+        else:
+            return pysam.AlignmentFile(self.outbam_paths[allele])
 
     def __getstate__(self):
         """ allows pickling of Samples()s """
