@@ -35,7 +35,7 @@ class ReadPair(object):
         for end, original_read in self.original_read_ends.items():
             for genome_source in genome_sources:
                 # this calculates the alignment score
-                cur_alns = genome_source.align(original_read)
+                cur_alns = genome_source.align(original_read, 0)
                 end_alns[end].extend(cur_alns)
 
                 # if self.original_read_ends["1"].query_name == "HA2WPADXX:21:3:257317:0":    
