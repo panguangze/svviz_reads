@@ -150,7 +150,8 @@ class GenomeSource:
 
         ref_seq = self.get_seq(aln.chrom, aln.reference_start, aln.reference_end, "+").upper()
         aln.score = _mapq.get_alignment_end_score(aln._read, ref_seq, max_quality=self.max_base_quality)
-        matched_count,read_count = _mapq.diff_region_similarity(aln._read, aln.q_st, aln.q_en, ref_seq, diff_len, max_quality=self.max_base_quality)
+        if self.aligner_type == "minimap2":
+            matched_count,read_count = _mapq.diff_region_similarity(aln._read, aln.q_st, aln.q_en, ref_seq, diff_len, max_quality=self.max_base_quality)
         # matched_count,read_count = result_str.split("-")
         aln.matched_count = int(matched_count)
         aln.read_count_in_region = int(read_count)
