@@ -159,7 +159,7 @@ class Sample(object):
                     self._search_distance = 150
             else:
                 search_distance = numpy.percentile(self.read_statistics.insertSizes, 99)
-                self._search_distance = int(search_distance)
+                self._search_distance = 150
         return self._search_distance
 
     @property
