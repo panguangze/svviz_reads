@@ -30,7 +30,7 @@ class Alignment(object):
     #
     #     self.ref_pairs = []
     #     self.alt_pairs = []
-    def __init__(self, read, q_st=0, q_en=0, ctg_len=0, reference_end=0):
+    def __init__(self, read, q_st=0, q_en=0, ctg_len=0, reference_end=0, aligner=None):
         self._read = read
         self._storage = None
         self.chrom = None
@@ -39,7 +39,8 @@ class Alignment(object):
         self.matched_count = 0
         self.read_count_in_region = 0
         self.ctg_len = ctg_len
-        self.reference_end = reference_end
+        if aligner == "minimap2":
+            self.reference_end = reference_end
         self.ref_pairs = []
         self.alt_pairs = []
         self.original_seq_len = 0
