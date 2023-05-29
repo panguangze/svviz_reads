@@ -97,8 +97,11 @@ class GenomeSource:
 
     def align(self, read, diff_len):
         alns = []
-        # qualities = read.original_qualities()
-        qualities = read.query_qualities
+        if self.aligner_type == "minimap2":
+            qualities = read.query_qualities
+        else:
+            qualities = read.original_qualities()
+
         # TODO
         # print(read.query_name, "read.query_name")
         raw_alns = self.aligner.align(read.original_sequence())
@@ -107,7 +110,7 @@ class GenomeSource:
 
         for aln in raw_alns:
             if self.aligner_type == "minimap2":
-                aln = Alignment(aln[0], aln[1], aln[2], aln[3], aln[4])
+                aln = Alignment(aln[0], aln[1], aln[2], aln[3], aln[4], "minimap2")
                 if aln.is_reverse and qualities is not None:
                     # print(aln._read.query_qualities, "qualities1x")
                     # print(len(qualities), "qualities2x")
@@ -118,7 +121,7 @@ class GenomeSource:
                     # print(len(qualities), "qualities2")
                     aln._read.query_qualities = qualities[int(aln.q_st):int(aln.q_en)]
             else:
-                aln = Alignment(aln)
+                aln = Alignment(aln, "bwa")
                 if aln.is_reverse and qualities is not None:
                     aln._read.query_qualities = qualities[::-1]
                 else:
