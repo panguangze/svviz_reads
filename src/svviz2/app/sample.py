@@ -154,7 +154,7 @@ class Sample(object):
     def search_distance(self):
         if self._search_distance is None:
             if self.single_ended:
-                self._search_distance = 1000
+                self._search_distance = 500
                 if self.datahub.args.fast:
                     self._search_distance = 150
             else:
