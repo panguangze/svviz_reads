@@ -217,9 +217,9 @@ def assign_reads_to_alleles(aln_sets, ref_breakpoint_collection, alt_breakpoint_
             # TODO if diff len large than 300, 0.95 and marge > 0.1, if diff len less than 300 and large than 150, 0.9 and marge 0.5, if diff len less than 150, 0.85 and marge 0.5
             ref_alt_margin = 0.3
             if math.isclose(percent - current_percent, 0.1, abs_tol=0.0001):
-                ref_alt_margin = 0.3
-            if is_dup_ins and diff_len < 200:
-                ref_alt_margin = ref_alt_margin - 0.03
+                ref_alt_margin = ref_alt_margin - 0.1
+            if diff_len < 200:
+                ref_alt_margin = ref_alt_margin - 0.1
             large_than_margin = False
             large_than_margin = max(abs(ref_percent2 - alt_percent), abs(alt_percent2 - ref_percent)) > ref_alt_margin
             large_than_margin_and_05 = max(abs(ref_percent2 - alt_percent), abs(alt_percent2 - ref_percent)) > ref_alt_margin and math.isclose(ref_alt_margin,0.5, abs_tol=0.0001)
