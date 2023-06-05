@@ -53,7 +53,7 @@ class ReadPair(object):
 
         return pair_alns
 
-    def realign(self, ref_genome_sources, alt_genome_sources):
+    def realign(self, ref_genome_sources, alt_genome_sources, diff_len=0, aligner_type="bwa"):
         self.ref_pairs = self.realign_against_allele(ref_genome_sources)
         self.alt_pairs = self.realign_against_allele(alt_genome_sources)
 

@@ -38,6 +38,7 @@ def get_overlaps(read_locus, unsequenced_insert_locus, breakpoints):
     overlaps = {}
 
     for breakpoint in breakpoints:
+        # print(breakpoint, breakpoint.start, breakpoint.end, breakpoint.chrom, read_locus.start,read_locus.end,read_locus.chrom, "break")
         if not read_locus.overlapsAnysense(breakpoint):
             continue
         if len(breakpoint) > 1:
@@ -76,7 +77,6 @@ def set_read_supports_allele(aln_set, aln, allele, score, read_stats, breakpoint
         unsequenced_insert_locus = intervals.Locus(chrom, start, end, "+")
     except AttributeError:
         unsequenced_insert_locus = None
-
     try:
         if aln.insert_size > read_stats.max_reasonable_insert_size():
             return 0
@@ -84,20 +84,18 @@ def set_read_supports_allele(aln_set, aln, allele, score, read_stats, breakpoint
             return 0
     except (IndexError, AttributeError):
         pass
-
-    overlaps = get_overlaps(aln_locus, unsequenced_insert_locus, breakpoint_collection)
-    if len(overlaps) == 0:
-        return 0
-
-    best_overlap = max(list(zip(*overlaps.values()))[1])
+    # overlaps = get_overlaps(aln_locus, unsequenced_insert_locus, breakpoint_collection)
+    # if len(overlaps) == 0:
+    #     return 0
+    # best_overlap = max(list(zip(*overlaps.values()))[1])
 
     aln_set.supports_allele = allele
     aln_set.support_prob = score / 40.0 #(1 - mapq.phred_to_prob(score, 10.0))
     aln_set.supporting_aln = aln
 
-    aln.set_tag("OV", best_overlap)
-    aln.set_tag("Ov", json.dumps(overlaps))
-    aln.overlap = best_overlap
+    # aln.set_tag("OV", best_overlap)
+    # aln.set_tag("Ov", json.dumps(overlaps))
+    # aln.overlap = best_overlap
 
     return aln_set.support_prob
 
@@ -119,10 +117,8 @@ def check_diff_region(aln, diff_len, percent, is_dup_ins=False):
     if aln is None:
         return False,0,0, percent
     original_percent = percent
-    if diff_len < 500:
-        percent = percent - 0.05
-    if diff_len < 200:
-        percent = percent - 0.05
+    # if diff_len < 500:
+    #     percent = percent - 0.05
     if diff_len > 10000:
         percent = percent - 0.05
     if percent == original_percent and is_dup_ins:
@@ -139,7 +135,7 @@ def check_diff_region(aln, diff_len, percent, is_dup_ins=False):
         # if aln.read_count_in_region / diff_len < 0.5:
         return False,0,0, percent
     # for alt, aln.ctg_len - aln.reference_end >  debug.ALIGN_DISTANCE
-    if (diff_len > 10000 and (aln.reference_end - (debug.ALIGN_DISTANCE - aln.reference_start))/diff_len > 0.25) or ((aln.reference_end - debug.ALIGN_DISTANCE)/diff_len > 0.5 and aln.matched_count / diff_len > 0.5):
+    if (diff_len > 10000 and (aln.reference_end - (debug.ALIGN_DISTANCE - aln.reference_start))/diff_len > 0.25) or (aln.reference_end - (debug.ALIGN_DISTANCE - aln.reference_start)/diff_len > 0.5 and aln.matched_count / diff_len > 0.5):
         percent1 = aln.matched_count / aln.read_count_in_region
         f1 = percent1 >= percent
         if debug.IS_DEBUG:
@@ -163,7 +159,7 @@ def check_diff_region(aln, diff_len, percent, is_dup_ins=False):
         return f1 and f2, min(percent1, percent2), max(percent1, percent2), percent
 
 
-def assign_reads_to_alleles(aln_sets, ref_breakpoint_collection, alt_breakpoint_collection, read_stats, diff_len, args):
+def assign_reads_to_alleles(aln_sets, ref_breakpoint_collection, alt_breakpoint_collection, read_stats, diff_len, args, is_breakpoint=False):
     def get_best_score(_aln_set, _allele):
         if _allele == "ref":
             alignments = _aln_set.ref_pairs
@@ -212,15 +208,15 @@ def assign_reads_to_alleles(aln_sets, ref_breakpoint_collection, alt_breakpoint_
             if ref_best_aln is not None and alt_best_aln is not None:
                 is_dup_ins = alt_best_aln.ctg_len > ref_best_aln.ctg_len
             is_ref, ref_percent, ref_percent2, current_percent = check_diff_region(ref_best_aln, diff_len, percent, is_dup_ins)
-            print("xxxxxxxxxxxxxxxxxxxxxx")
             is_alt, alt_percent, alt_percent2, current_percent = check_diff_region(alt_best_aln, diff_len, percent, is_dup_ins)
             # TODO if diff len large than 300, 0.95 and marge > 0.1, if diff len less than 300 and large than 150, 0.9 and marge 0.5, if diff len less than 150, 0.85 and marge 0.5
-            ref_alt_margin = 0.3
+            ref_alt_margin = 0.4
             if math.isclose(percent - current_percent, 0.1, abs_tol=0.0001):
                 ref_alt_margin = ref_alt_margin - 0.1
             if diff_len < 200:
                 ref_alt_margin = ref_alt_margin - 0.1
             large_than_margin = False
+            percent_margin = max(abs(ref_percent2 - alt_percent), abs(alt_percent2 - ref_percent))
             large_than_margin = max(abs(ref_percent2 - alt_percent), abs(alt_percent2 - ref_percent)) > ref_alt_margin
             large_than_margin_and_05 = max(abs(ref_percent2 - alt_percent), abs(alt_percent2 - ref_percent)) > ref_alt_margin and math.isclose(ref_alt_margin,0.5, abs_tol=0.0001)
             if debug.IS_DEBUG:
@@ -231,37 +227,49 @@ def assign_reads_to_alleles(aln_sets, ref_breakpoint_collection, alt_breakpoint_
                 aln_ref = aln_set.ref_pairs[0]
             if len(aln_set.alt_pairs) != 0:
                 aln_alt = aln_set.alt_pairs[0]
-            if (is_ref and is_alt) or (not is_ref and not is_alt):
-                aln = aln_ref if aln_ref != None else aln_alt
-                aln_set.supports_allele = "amb"
-                aln_set.supporting_aln = aln
-                # print(aln_set.query_name, "amb")
-            elif (is_ref and large_than_margin) or (is_ref and large_than_margin_and_05 and ref_percent > alt_percent):
-                if alt_percent2 > 0.95 and alt_percent > 0.75:
-                    aln = aln_ref
-                    aln_set.supports_allele = "amb"
-                    aln_set.supporting_aln = aln
-                else:
-                    aln = aln_ref
-                    # if is_ref:
-                    ref_total += set_read_supports_allele(
-                        aln_set, aln, "ref", ref_score, read_stats, ref_breakpoint_collection, min_overlap=4)
-                # print(aln_set.query_name, "ref")
-            elif (is_alt and large_than_margin) or (is_alt and large_than_margin_and_05 and ref_percent < alt_percent):
-            # elif (alt_score - ref_score > 1 and alt_score >= 30 and large_than_margin) or (large_than_margin_and_05 and ref_percent < alt_percent):
-                if ref_percent2 > 0.95 and ref_percent > 0.75:
-                    aln = aln_alt
-                    aln_set.supports_allele = "amb"
-                    aln_set.supporting_aln = aln
-                else:
-                    aln = aln_alt
-                    alt_total += set_read_supports_allele(
-                        aln_set, aln, "alt", alt_score, read_stats, alt_breakpoint_collection, min_overlap=4)
-                # print(aln_set.query_name, "alt")
+            if (ref_score - alt_score) > 1 and ref_score >= 30 and ((is_ref and percent_margin > 0.1) or is_breakpoint):
+                aln = aln_ref
+                alt_total += set_read_supports_allele(
+                    aln_set, aln, "ref", alt_score, read_stats, alt_breakpoint_collection, min_overlap=4)
+            elif (alt_score - ref_score) > 1 and alt_score >= 30 and ((is_alt and percent_margin > 0.1) or is_breakpoint):
+                aln = aln_alt
+                alt_total += set_read_supports_allele(
+                    aln_set, aln, "alt", alt_score, read_stats, alt_breakpoint_collection, min_overlap=4)
             else:
                 aln = aln_ref if aln_ref != None else aln_alt
                 aln_set.supports_allele = "amb"
                 aln_set.supporting_aln = aln
+            # if (is_ref and is_alt) or (not is_ref and not is_alt):
+            #     aln = aln_ref if aln_ref != None else aln_alt
+            #     aln_set.supports_allele = "amb"
+            #     aln_set.supporting_aln = aln
+            #     # print(aln_set.query_name, "amb")
+            # elif (is_ref and large_than_margin) or (is_ref and large_than_margin_and_05 and ref_percent > alt_percent):
+            #     if alt_percent2 > 0.95 and alt_percent > 0.75:
+            #         aln = aln_ref
+            #         aln_set.supports_allele = "amb"
+            #         aln_set.supporting_aln = aln
+            #     else:
+            #         aln = aln_ref
+            #         # if is_ref:
+            #         ref_total += set_read_supports_allele(
+            #             aln_set, aln, "ref", ref_score, read_stats, ref_breakpoint_collection, min_overlap=4)
+            #     # print(aln_set.query_name, "ref")
+            # elif (is_alt and large_than_margin) or (is_alt and large_than_margin_and_05 and ref_percent < alt_percent):
+            # # elif (alt_score - ref_score > 1 and alt_score >= 30 and large_than_margin) or (large_than_margin_and_05 and ref_percent < alt_percent):
+            #     if ref_percent2 > 0.95 and ref_percent > 0.75:
+            #         aln = aln_alt
+            #         aln_set.supports_allele = "amb"
+            #         aln_set.supporting_aln = aln
+            #     else:
+            #         aln = aln_alt
+            #         alt_total += set_read_supports_allele(
+            #             aln_set, aln, "alt", alt_score, read_stats, alt_breakpoint_collection, min_overlap=4)
+            #     # print(aln_set.query_name, "alt")
+            # else:
+            #     aln = aln_ref if aln_ref != None else aln_alt
+            #     aln_set.supports_allele = "amb"
+            #     aln_set.supporting_aln = aln
             # print(aln_set.query_name, "final amb")
     else:
         for aln_set in aln_sets:

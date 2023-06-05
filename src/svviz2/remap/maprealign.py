@@ -24,7 +24,8 @@ def map_realign_pairs(batch, datahub, sample, diff_len):
         # print(read_or_pair)
         #if read_or_pair.name == "D00360:64:HBAP3ADXX:1:2114:9685:53802":
         if datahub.aligner_type == "bwa":
-            read_or_pair.realign(ref_genome_sources, alt_genome_sources)
+            # read_or_pair.realign(ref_genome_sources, alt_genome_sources)
+            read_or_pair.realign(ref_genome_sources, alt_genome_sources, diff_len, datahub.aligner_type)
         else:
             read_or_pair.realign(ref_genome_sources, alt_genome_sources, diff_len, datahub.aligner_type)
 

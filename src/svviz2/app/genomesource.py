@@ -110,8 +110,9 @@ class GenomeSource:
 
         for aln in raw_alns:
             if self.aligner_type == "minimap2":
-                aln = Alignment(aln[0], aln[1], aln[2], aln[3], aln[4], "minimap2")
+                aln = Alignment(aln[0], aln[1], aln[2], aln[3], aln[4], aln[5], "minimap2")
                 if aln.is_reverse and qualities is not None:
+                    aln.full_qualities = read.query_qualities
                     # print(aln._read.query_qualities, "qualities1x")
                     # print(len(qualities), "qualities2x")
                     # print(read.query_name, aln.q_st, aln.q_en, "q_st, q_en")
@@ -120,6 +121,7 @@ class GenomeSource:
                     # print(aln._read.query_qualities, "qualities1")
                     # print(len(qualities), "qualities2")
                     aln._read.query_qualities = qualities[int(aln.q_st):int(aln.q_en)]
+                aln.full_qualities = read.query_qualities
             else:
                 aln = Alignment(aln, "bwa")
                 if aln.is_reverse and qualities is not None:
@@ -149,12 +151,35 @@ class GenomeSource:
         # aln.score = mc.get_alignment_end_score(aln)
 
         ref_seq = self.get_seq(aln.chrom, aln.reference_start, aln.reference_end, "+").upper()
-        aln.score = _mapq.get_alignment_end_score(aln._read, ref_seq, max_quality=self.max_base_quality)
+        if self.aligner_type == "bwa":
+            aln.score = _mapq.get_alignment_end_score(aln._read, ref_seq,0,0,0,0,0,"bwa", max_quality=self.max_base_quality)
         if self.aligner_type == "minimap2":
+            aln.score = _mapq.get_alignment_end_score(aln._read, ref_seq, aln.q_st, aln.q_en, aln.query_len, aln.ctg_len, aln.reference_end,"minimap2", max_quality=self.max_base_quality)
+            print(aln.q_st, aln.q_en, aln.query_len, aln.ctg_len, aln.reference_end, aln._read.query_name, "aln.q_st, aln.q_en, aln.query_len, aln.ctg_len, aln.reference_end")
             matched_count,read_count = _mapq.diff_region_similarity(aln._read, aln.q_st, aln.q_en, ref_seq, diff_len, max_quality=self.max_base_quality)
+            if aln.q_st > aln._read.reference_start:
+                left_clip_start = aln.q_st - aln._read.reference_start
+                left_clip_end = aln.q_st
+            else:
+                left_clip_start = 0
+                left_clip_end = aln.q_st
+            if aln.q_en > aln.ctg_len:
+                right_clip_start = aln._read.reference_end
+                right_clip_end = aln.ctg_len
+            else:
+                right_clip_start = aln.q_en
+                right_clip_end = aln.query_len
+            # print(aln.score,left_clip_start, left_clip_end, right_clip_start, right_clip_end,len(aln.full_qualities), "aln.score adjusted beffor")
+            clip_left_adjust = min(1.0, (left_clip_end - left_clip_start)/ 10)
+            clip_right_adjust = min(1.0, (right_clip_end - right_clip_start)/ 10)
+            for i in range(left_clip_start, left_clip_end - 1):
+                aln.score += (clip_left_adjust) * (aln.full_qualities[i] / -10 + 0)
+            for i in range(right_clip_start, right_clip_end -1):
+                aln.score += (clip_right_adjust) * (aln.full_qualities[i] / -10 + 0)
         # matched_count,read_count = result_str.split("-")
             aln.matched_count = int(matched_count)
             aln.read_count_in_region = int(read_count)
+            # print(aln.score,left_clip_start, left_clip_end, right_clip_start, right_clip_end,len(aln.full_qualities), "aln.score adjusted after")
 
         # print(aln._read.query_sequence, "query_sequence")
         # print(ref_seq, "ref_sequence")

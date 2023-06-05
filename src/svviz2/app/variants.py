@@ -158,7 +158,6 @@ class StructuralVariant(object):
         return "{}:{}({};{})".format(self.name, self.__class__.__name__, self.breakpoints, self.align_distance)
     def short_name(self):
         return "{}.{}_{}_{}".format(self.name, self.__class__.__name__[:3].lower(), self.breakpoints[0].chrom, self.breakpoints[0].start)
-
     def search_regions(self):
         pass    
 

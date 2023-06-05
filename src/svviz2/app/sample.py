@@ -222,13 +222,11 @@ class Sample(object):
                     #     continue
                 if aln_set.supports_allele == "ref":
                     self.support_file.write(
-                        self.datahub.variant.short_name().split(".")[
-                            0] + " ref " + aln_set.supporting_aln._read.query_name + "\n")
+                        self.datahub.variant.name + " ref " + aln_set.supporting_aln._read.query_name + "\n")
                     # print(self.datahub.variant.short_name(), "ref", aln_set.supporting_aln._read.query_name)
                 if aln_set.supports_allele == "alt":
                     self.support_file.write(
-                        self.datahub.variant.short_name().split(".")[
-                            0] + " alt " + aln_set.supporting_aln._read.query_name + "\n")
+                        self.datahub.variant.name + " alt " + aln_set.supporting_aln._read.query_name + "\n")
                 outbam.write(aln_set.supporting_aln._read)
                 # outbam.write(aln_set._read)
             else:
@@ -240,20 +238,16 @@ class Sample(object):
                     #     continue
                 if aln_set.supports_allele == "ref":
                     self.support_file.write(
-                        self.datahub.variant.short_name().split(".")[
-                            0] + " ref " + aln_set.supporting_aln.aln1._read.query_name + "\n")
+                        self.datahub.variant.name + " ref " + aln_set.supporting_aln.aln1._read.query_name + "\n")
                     self.support_file.write(
-                        self.datahub.variant.short_name().split(".")[
-                            0] + " ref " + aln_set.supporting_aln.aln2._read.query_name + "\n")
+                        self.datahub.variant.name + " ref " + aln_set.supporting_aln.aln2._read.query_name + "\n")
 
                     # print(self.datahub.variant.short_name(), "ref", aln_set.supporting_aln._read.query_name)
                 if aln_set.supports_allele == "alt":
                     self.support_file.write(
-                        self.datahub.variant.short_name().split(".")[
-                            0] + " alt " + aln_set.supporting_aln.aln1._read.query_name + "\n")
+                        self.datahub.variant.name + " alt " + aln_set.supporting_aln.aln1._read.query_name + "\n")
                     self.support_file.write(
-                        self.datahub.variant.short_name().split(".")[
-                            0] + " alt " + aln_set.supporting_aln.aln2._read.query_name + "\n")
+                        self.datahub.variant.name + " alt " + aln_set.supporting_aln.aln2._read.query_name + "\n")
                 outbam.write(aln_set.supporting_aln.aln1._read)
                 outbam.write(aln_set.supporting_aln.aln2._read)
             self.support_file.flush()

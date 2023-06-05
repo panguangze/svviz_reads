@@ -146,25 +146,32 @@ class DataHub(object):
                         # print("AFTER:: ", len(batch))
                 # print(batch)
                 # break
-
-                diff_len = abs(len(self.variant.seqs("ref")) - len(self.variant.seqs("alt")))
-                if diff_len == 0:
-                    if len(self.variant.segments("ref")) == 3:
-                        diff_len = len(self.variant.segments("ref")[1])
-                    elif len(self.variant.segments("alt")) == 3:
-                        diff_len = len(self.variant.segments("alt")[1])
-                    else:
-                        diff_len = 500
+                # if self.args.is_debug:
+                #     print(self.variant.segments("ref"))
+                #     print(self.variant.segments("alt"))
+                #     print(len(self.variant.seqs("ref")), "ref_len", len(self.variant.seqs("alt")), "alt_len")
+                ref_len = len(list(self.variant.seqs("ref").values())[0])
+                alt_len = len(list(self.variant.seqs("alt").values())[0])
+                diff_len = abs(ref_len - alt_len)
+                if type(self.variant) is variants.Breakend:
+                    diff_len = 1000
+                # print(ref_len, alt_len, diff_len, "diff_len")
+                # if diff_len < 10:
+                #     if len(self.variant.segments("ref")) == 3:
+                #         diff_len = len(self.variant.segments("ref")[1])
+                #     elif len(self.variant.segments("alt")) == 3:
+                #         diff_len = len(self.variant.segments("alt")[1])
+                #     else:
+                #         diff_len = 500
                 # print(self.variant.segments("ref"), "segments")
                 # print(self.variant.segments("alt"), "segments")
-                # print(diff_len, "diff_len")
                 aln_sets = maprealign.map_realign(batch, self, sample, diff_len)
-
+                is_breakend = type(self.variant) is variants.Breakend
                 cur_ref_count, cur_alt_count = genotyping.assign_reads_to_alleles(
                     aln_sets,
                     variants.get_breakpoints_on_local_reference(self.variant, "ref"),
                     variants.get_breakpoints_on_local_reference(self.variant, "alt"),
-                    sample.read_statistics, diff_len, self.args)
+                    sample.read_statistics, diff_len, self.args, is_breakend)
                 ref_count += cur_ref_count
                 alt_count += cur_alt_count
 
@@ -285,7 +292,6 @@ class DataHub(object):
             self.args.outdir = os.getcwd()
         misc.ensure_dir(self.args.outdir)
         self.temp_dir = tempfile.TemporaryDirectory(prefix="svviz2-temp", dir=self.args.outdir)
-
         for bam_description in self.args.bam:
             fields = bam_description.split(",")
 

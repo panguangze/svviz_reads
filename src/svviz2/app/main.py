@@ -1,6 +1,8 @@
 import logging
 import sys
 import time
+import faulthandler
+faulthandler.enable()
 
 from svviz2.app import commandline
 from svviz2.app.datahub import DataHub

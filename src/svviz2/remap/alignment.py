@@ -30,7 +30,7 @@ class Alignment(object):
     #
     #     self.ref_pairs = []
     #     self.alt_pairs = []
-    def __init__(self, read, q_st=0, q_en=0, ctg_len=0, reference_end=0, aligner=None):
+    def __init__(self, read, q_st=0, q_en=0, ctg_len=0, reference_end=0, query_len=0, aligner=None):
         self._read = read
         self._storage = None
         self.chrom = None
@@ -44,6 +44,8 @@ class Alignment(object):
         self.ref_pairs = []
         self.alt_pairs = []
         self.original_seq_len = 0
+        self.query_len = query_len
+        self.full_qualities = None
 
 
     def original_sequence(self):

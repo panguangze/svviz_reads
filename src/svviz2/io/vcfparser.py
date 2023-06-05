@@ -42,7 +42,7 @@ class VCFParser(object):
                 svlen = variant.info["SVLEN"]
                 if type(svlen) is tuple:
                     svlen = variant.info["SVLEN"][0]
-                if abs(svlen) <= 50:
+                if abs(svlen) < 50:
                     yield None
                     continue
             if "SVTYPE" in variant.info:

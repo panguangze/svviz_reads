@@ -56,7 +56,7 @@ cdef numpy.ndarray[DTYPE_FLOAT_t, ndim=1] get_qualities(aln, float max_quality):
 
 
 cpdef double get_alignment_end_score(
-    AlignedSegment aln, str ref_seq, bint add_tag=True, float max_quality=40.0) except 9999: 
+    AlignedSegment aln, str ref_seq, int q_st, int q_en, int query_len, int ref_len, int ref_end, str aligner, bint add_tag=True, float max_quality=40.0) except 9999:
 
     cdef:
         numpy.ndarray[DTYPE_FLOAT_t, ndim=1] qualities
@@ -70,9 +70,7 @@ cpdef double get_alignment_end_score(
 
         bint in_gap = False
         bint read_has_nuc, ref_has_nuc
-
         int i = 0
-
     qualities = get_qualities(aln, max_quality)
     cigartuples = aln.cigartuples
     clip_left_adjust =  min(1.0, cigartuples[0][1] / min_clip_length)
@@ -82,15 +80,24 @@ cpdef double get_alignment_end_score(
 
     _query_sequence = aln.query_sequence.encode("ascii")
     query_sequence = _query_sequence
-    query_start = aln.query_alignment_start
-    query_end = aln.query_alignment_end
+    query_start = q_st
+    query_end = q_en
+    if aligner == 'minimap2':
+        query_start = aln.query_alignment_start
+        query_end = aln.query_alignment_end
+        i = query_start
 
     _reference_sequence = ref_seq.encode("ascii")
     reference_sequence = _reference_sequence
 
 
+    # left_clip = max(query_start, reference_start) - min(query_start, reference_start)
+    # right_clip = min(query_len - query_end, ref_len - ref_end)
+    # total_clip = left_clip + right_clip
+    # log10_score += (clip_left_adjust) * (60 / -phred_scale + clipping_penalty)
     tag = False
     for read_pos, ref_pos in aln.get_aligned_pairs():
+        # print(read_pos,ref_pos, "read ref pos")
         # if ref_pos is not None and ref_pos < 5000:
         #     tag = True
         #     continue
@@ -106,11 +113,13 @@ cpdef double get_alignment_end_score(
             ref_nuc = reference_sequence[ref_pos-reference_start]
             ref_has_nuc = True
         # print(i, read_pos, read_nuc, ref_pos, ref_nuc, log10_score, read_has_nuc, ref_has_nuc)
-
+        # print(cigartuples, i, query_start,clip_left_adjust, clip_right_adjust, "query start")
         if i < query_start:
             log10_score += (clip_left_adjust) * (read_quality / -phred_scale + clipping_penalty)
+            # print(log10_score,"clip left adjust")
         elif i >= query_end:
             log10_score += (clip_right_adjust) * (read_quality / -phred_scale + clipping_penalty)
+            # print(log10_score,"clip right adjust")
         elif not read_has_nuc:
             # deletion
             if in_gap:
@@ -169,12 +178,13 @@ cpdef tuple diff_region_similarity(
 
         int i = 0
 
-
+    print("0xxx")
     qualities = get_qualities(aln, max_quality)
+    print("1xxx")
     cigartuples = aln.cigartuples
     clip_left_adjust =  min(1.0, cigartuples[0][1] / min_clip_length)
     clip_right_adjust = min(1.0, cigartuples[-1][1] / min_clip_length)
-
+    print("2xxx")
     reference_start = aln.reference_start
 
     query_start = q_st
@@ -199,10 +209,10 @@ cpdef tuple diff_region_similarity(
     i3 = 0
     i4 = 0
     i5 = 0
+    print("3xxx")
 
     tag = True
     for read_pos, ref_pos in aln.get_aligned_pairs():
-        # print(read_pos, ref_pos, "read ref")
         if ref_pos is not None and ref_pos < debug.ALIGN_DISTANCE:
             tag = True
             continue
@@ -219,8 +229,9 @@ cpdef tuple diff_region_similarity(
             read_base_count += 1
         ref_has_nuc = False
         if ref_pos is not None:
-            ref_nuc = reference_sequence[ref_pos]
+            ref_nuc = reference_sequence[ref_pos - reference_start]
             ref_has_nuc = True
+        # print(i, read_pos, read_nuc, ref_pos, ref_nuc, ref_seq[ref_pos],len(ref_seq), read_has_nuc, ref_has_nuc, "next")
         # print(i, read_pos, read_nuc, ref_pos, ref_nuc, log10_score, read_has_nuc, ref_has_nuc)
         # print(read_nuc, ref_nuc, "read_nuc, ref_nuc")
         if i < query_start:
