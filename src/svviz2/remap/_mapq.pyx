@@ -178,13 +178,10 @@ cpdef tuple diff_region_similarity(
 
         int i = 0
 
-    print("0xxx")
     qualities = get_qualities(aln, max_quality)
-    print("1xxx")
     cigartuples = aln.cigartuples
     clip_left_adjust =  min(1.0, cigartuples[0][1] / min_clip_length)
     clip_right_adjust = min(1.0, cigartuples[-1][1] / min_clip_length)
-    print("2xxx")
     reference_start = aln.reference_start
 
     query_start = q_st
@@ -209,7 +206,6 @@ cpdef tuple diff_region_similarity(
     i3 = 0
     i4 = 0
     i5 = 0
-    print("3xxx")
 
     tag = True
     for read_pos, ref_pos in aln.get_aligned_pairs():
