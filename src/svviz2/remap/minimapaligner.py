@@ -32,5 +32,5 @@ class Aligner(object):
                     cur_aln.query_sequence = reverse_comp(seq[faln.q_st:faln.q_en])
                 else:
                     cur_aln.query_sequence = seq[faln.q_st:faln.q_en]
-                alns.append((cur_aln, faln.q_st, faln.q_en, faln.ctg_len, faln.r_en))
+                alns.append((cur_aln, faln.q_st, faln.q_en, faln.ctg_len, faln.r_en, len(seq)))
         return alns
