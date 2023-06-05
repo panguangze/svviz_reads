@@ -10,7 +10,7 @@ import sys
 from svviz2.io.readstatistics import ReadStatistics
 from svviz2.utility.bam import bam_sort_index
 from svviz2.utility.misc import str_to_bool
-
+from svviz2.app.variants import Breakend
 logger = logging.getLogger(__name__)
 
 
@@ -155,7 +155,7 @@ class Sample(object):
         if self._search_distance is None:
             if self.single_ended:
                 self._search_distance = 500
-                if self.datahub.args.fast:
+                if self.datahub.args.fast or type(self.datahub.variant) is Breakend:
                     self._search_distance = 150
             else:
                 search_distance = numpy.percentile(self.read_statistics.insertSizes, 99)
