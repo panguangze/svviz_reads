@@ -90,14 +90,15 @@ class VCFParser(object):
 
                 if "," in mateid:
                     NotImplementedError("we currently don't support ambiguous breakends")
-
-                if mateid in breakends:
-                    breakend = get_breakend(variant, breakends.pop(mateid), self.datahub)
-                    if breakend is not None:
-                        yield breakend
-                else:
-                    assert not variant.id in breakends
-                    breakends[variant.id] = variant
+                breakend = get_breakend(variant, None, self.datahub)
+                yield breakend
+                # if mateid in breakends:
+                #     breakend = get_breakend(variant, breakends.pop(mateid), self.datahub)
+                #     if breakend is not None:
+                #         yield breakend
+                # else:
+                #     assert not variant.id in breakends
+                #     breakends[variant.id] = variant
             elif only_nucs(variant.ref) and only_nucs(variant.alts[0]):  # and sv_type == "INS":
                 yield get_sequence_defined(variant, self.datahub)
             elif sv_type == "DEL":
@@ -105,7 +106,10 @@ class VCFParser(object):
             # elif sv_type == "INS" and ("INS:ME" in variant.alts[0] or "MEINFO" in variant.info):
             #    raise NotImplementedError("not yet implemented: mobile element insertions")
             elif sv_type == "INS":
-                yield get_insN(variant, self.datahub)
+                if self.datahub.args.instag is not None and self.datahub.args.instag not in variant.info:
+                    yield None
+                else:
+                    yield get_insN(variant, self.datahub)
             elif sv_type == "TRA":
                 yield get_translocation(variant, self.datahub)
             elif sv_type == "INV":
@@ -152,7 +156,7 @@ def get_sequence_defined(variant, datahub):
 
 def get_breakend(first, second, datahub):
     # return "{}\n{}".format(_parse_breakend(first), _parse_breakend(second))
-    return parse_breakend(first, second, datahub)
+    return parse_single_breakend(first, datahub)
 
 
 def get_deletion(variant, datahub):
@@ -252,7 +256,42 @@ def _parse_breakend(record):
         }
         return result
 
+def parse_mate_chrom_and_pos(sv_vcf_breakend_alt_string):
+    pattern = r'[\[\]](.*?)[\[\]]'
+    match = re.search(pattern, sv_vcf_breakend_alt_string)
+    if match:
+        mate_info = match.group(1)
+        mate_chrom, mate_pos = mate_info.split(':')
+        mate_pos = int(mate_pos)
+        return mate_chrom, mate_pos
+    else:
+        return None, None
+def parse_single_breakend(record, datahub):
+    result1 = _parse_breakend(record)
+    # mate_chr, mate_pos = parse_mate_chrom_and_pos(record.alts[0])
+    # print(record.alts[0],result1["chrom"],mate_chr, "record alt")
+    # if mate_chr is None:
+    #     return None
+    # result2 = _parse_breakend(record2)
+    # if not (result1["chrom"] == mate_chr and result1["pos"] == mate_pos):
+    #     logger.error("Malformed VCF: breakends do not appear to match:\n{}".format(record))
+    #     return None
 
+    # if result1["chrom"] == result1["other_chrom"] and \
+    #         abs(result1["pos"] - result1["other_pos"]) < datahub.align_distance * 5:
+    #     logger.error("Can't yet handle nearby breakends; skipping")
+    #     return None
+
+    # convert from 1-based to 0-based coordinates
+    breakpoint1 = Locus(result1["chrom"],
+                        result1["pos"] - 1, result1["pos"] - 1,
+                        result1["orientation"][0])
+    breakpoint2 = Locus(result1["other_chrom"],
+                        result1["other_pos"] - 1, result1["other_pos"] - 1,
+                        result1["orientation"][1])
+
+    # print(breakpoint1, breakpoint2)
+    return variants.Breakend(breakpoint1, breakpoint2, datahub, result1["id"])
 def parse_breakend(record1, record2, datahub):
     result1 = _parse_breakend(record1)
 
