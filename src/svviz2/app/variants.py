@@ -19,7 +19,7 @@ def get_breakpoints_on_original_reference(sv):
     for part in chrom_parts:
         for i in range(len(part.segments)):#segment in part.segments[:-1]:
             segment = part.segments[i]
-            print("SEGMENT", segment)
+            # print("SEGMENT", segment)
             if i > 0:
                 # breakpoint = Locus(segment.chrom, segment.start, segment.start, "+")
                 breakpoint = segment.fiveEndLocus()
@@ -285,13 +285,13 @@ class Breakend(StructuralVariant):
 
     def search_regions(self, searchDistance):
         search_regions = []
-
-        for breakpoint in self.breakpoints:
-            cur_locus = Locus(breakpoint.chrom,
-                              non_negative(breakpoint.start-searchDistance), 
-                              breakpoint.end+searchDistance,
-                              breakpoint.strand)
-            search_regions.append(cur_locus)
+        breakpoint = self.breakpoints[0]
+        # for breakpoint in self.breakpoints:
+        cur_locus = Locus(breakpoint.chrom,
+                          non_negative(breakpoint.start-searchDistance),
+                          breakpoint.end+searchDistance,
+                          breakpoint.strand)
+        search_regions.append(cur_locus)
 
         return search_regions
 
@@ -311,9 +311,9 @@ class Breakend(StructuralVariant):
             name = "ref_{}".format(b1.chrom)
             parts.append(ChromPart(name, [segments[0], segments[1]], self.sources))
 
-            name = "ref_{}".format(b2.chrom)
-            if b1.chrom == b2.chrom: name += "b"
-            parts.append(ChromPart(name, [segments[2], segments[3]], self.sources))
+            # name = "ref_{}".format(b2.chrom)
+            # if b1.chrom == b2.chrom: name += "b"
+            # parts.append(ChromPart(name, [segments[2], segments[3]], self.sources))
 
         else:
             if b1.strand == "+": s1 = segments[0]

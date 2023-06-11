@@ -187,6 +187,8 @@ def get_insN(variant, datahub):
     strand = "+"
     if datahub.args.instag is not None and datahub.args.instag in variant.info:
         inserted_sequence = variant.info[datahub.args.instag]
+        if type(inserted_sequence) == tuple:
+            inserted_sequence = inserted_sequence[0]
     else:
         # TODO, this is a hack to get around the fact that some insertions are not annotated
         if "SVLEN" in variant.info:
