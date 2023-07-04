@@ -135,7 +135,7 @@ def get_sequence_defined(variant, datahub):
     # variant.start: 0-based, inclusive; variant.stop: 0-based, exclusive
     # print(variant.stop , variant.start, len(variant.ref), "eeeeeeee")
     # Fix SURVIVOR simulate end coordinate.
-    if variant.stop - variant.start != len(variant.ref) and variant.stop - variant.start - 1 != len(variant.ref):
+    if variant.stop - variant.start != variant.rlen and variant.stop - variant.start - 1 != variant.rlen:
         error = "VCF format error: coordinates ({}:{}-{}) do not match the variant length ({}). Please check the VCF variant" \
                 "spec; in particular, END coordinates are inclusive. Full variant: {}"
         raise VCFParserError(error.format(variant.chrom, variant.start, variant.stop, variant.rlen, variant))
